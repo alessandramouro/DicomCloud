@@ -1,0 +1,839 @@
+// DicomCloud - Prisma Schema
+// Enterprise Medical Imaging SaaS Platform
+// LGPD/HIPAA Compliant
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch", "fullTextIndex"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum TenantStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum TenantPlan {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum ClinicStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING_VERIFICATION
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  CLINIC_ADMIN
+  OPERATOR
+  PHYSICIAN
+  READONLY
+}
+
+enum StudyStatus {
+  RECEIVING
+  RECEIVED
+  PROCESSING
+  PROCESSED
+  QUEUED_EXPORT
+  EXPORTING
+  EXPORTED
+  EXPORT_FAILED
+  ARCHIVED
+}
+
+enum ExportJobStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  RETRYING
+  CANCELLED
+}
+
+enum StorageDestinationType {
+  GOOGLE_DRIVE
+  ONEDRIVE
+  SMB
+  NFS
+  S3
+  LOCAL
+}
+
+enum EdgeAgentStatus {
+  ONLINE
+  OFFLINE
+  DEGRADED
+  MAINTENANCE
+}
+
+enum AuditAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  LOGIN_FAILED
+  PASSWORD_RESET
+  MFA_ENABLED
+  MFA_DISABLED
+  EXPORT_STARTED
+  EXPORT_COMPLETED
+  EXPORT_FAILED
+  STUDY_RECEIVED
+  STUDY_DELETED
+  STORAGE_CONFIGURED
+  USER_INVITED
+  USER_SUSPENDED
+  PERMISSION_CHANGED
+  AGENT_REGISTERED
+  AGENT_REVOKED
+  AGENT_ENROLLED
+}
+
+enum NotificationType {
+  EMAIL
+  WEBHOOK
+  IN_APP
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  READ
+}
+
+enum OAuthProvider {
+  GOOGLE
+  MICROSOFT
+}
+
+enum DicomModality {
+  US
+  CT
+  MR
+  XR
+  CR
+  DR
+  NM
+  PET
+  MG
+  RF
+  OT
+}
+
+// ============================================================
+// TENANT (Root entity — multi-tenancy)
+// ============================================================
+
+model Tenant {
+  id           String       @id @default(uuid()) @db.Uuid
+  name         String       @db.VarChar(255)
+  slug         String       @unique @db.VarChar(100)
+  status       TenantStatus @default(ACTIVE)
+  plan         TenantPlan   @default(FREE)
+  billingEmail String?      @db.VarChar(255)
+  logoUrl      String?
+  customDomain String?      @unique
+
+  // Settings stored as JSON
+  settings Json @default("{}")
+  quotas   Json @default("{}")
+  features Json @default("{}")
+
+  // Relations
+  clinics            Clinic[]
+  users              User[]
+  studies            Study[]
+  exportJobs         ExportJob[]
+  auditLogs          AuditLog[]
+  notifications      Notification[]
+  oauthTokens        OAuthToken[]
+  systemSettings     SystemSetting[]
+  webhookConfigs     WebhookConfig[]
+  storageDestinations StorageDestination[]
+  enrollmentTokens   AgentEnrollmentToken[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([slug])
+  @@index([status])
+  @@map("tenants")
+}
+
+// ============================================================
+// CLINIC
+// ============================================================
+
+model Clinic {
+  id       String      @id @default(uuid()) @db.Uuid
+  tenantId String      @db.Uuid
+  name     String      @db.VarChar(255)
+  cnpj     String?     @db.VarChar(18)
+  cnes     String?     @db.VarChar(20)
+  status   ClinicStatus @default(ACTIVE)
+  logoUrl  String?
+
+  // Address
+  addressStreet       String? @db.VarChar(255)
+  addressNumber       String? @db.VarChar(20)
+  addressComplement   String? @db.VarChar(100)
+  addressNeighborhood String? @db.VarChar(100)
+  addressCity         String  @db.VarChar(100)
+  addressState        String  @db.VarChar(2)
+  addressZipCode      String? @db.VarChar(10)
+  addressCountry      String  @default("BR") @db.VarChar(3)
+
+  // Contact
+  contactPhone          String? @db.VarChar(20)
+  contactEmail          String? @db.VarChar(255)
+  contactWebsite        String? @db.VarChar(255)
+  contactResponsible    String? @db.VarChar(255)
+  contactResponsiblePhone String? @db.VarChar(20)
+
+  // DICOM config
+  dicomAeTitle  String @default("DICOMCLOUD") @db.VarChar(16)
+  dicomPort     Int    @default(104)
+  dicomAllowedCallingAeTitles Json @default("[]")
+
+  // Settings
+  timezone          String @default("America/Sao_Paulo") @db.VarChar(50)
+  autoExportEnabled Boolean @default(true)
+  exportOnComplete  Boolean @default(true)
+  retentionDays     Int?
+  worklistEnabled   Boolean @default(false)
+  worklistHisUrl    String? // host:port of the HIS/RIS C-FIND SCP
+  worklistAeTitle   String? @db.VarChar(16) // called AE title of the HIS/RIS worklist provider
+  anonymizeOnExport Boolean @default(false)
+
+  // Relations
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  users              User[]
+  studies            Study[]
+  edgeAgents         EdgeAgent[]
+  storageDestinations StorageDestination[]
+  exportJobs         ExportJob[]
+  auditLogs          AuditLog[]
+  syncLogs           SyncLog[]
+  enrollmentTokens   AgentEnrollmentToken[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([tenantId])
+  @@index([status])
+  @@map("clinics")
+}
+
+// ============================================================
+// USER
+// ============================================================
+
+model User {
+  id         String     @id @default(uuid()) @db.Uuid
+  tenantId   String     @db.Uuid
+  clinicId   String?    @db.Uuid
+  email      String     @db.VarChar(255)
+  name       String     @db.VarChar(255)
+  passwordHash String   @db.VarChar(255)
+  role       UserRole   @default(READONLY)
+  status     UserStatus @default(PENDING_VERIFICATION)
+  permissions Json      @default("[]")
+  mustChangePassword Boolean @default(false)
+
+  // MFA
+  mfaEnabled    Boolean @default(false)
+  mfaSecret     String? @db.VarChar(255)
+  mfaBackupCodes Json   @default("[]")
+
+  // Profile
+  avatarUrl     String?
+  preferences   Json    @default("{}")
+
+  // Login tracking (LGPD)
+  lastLoginAt   DateTime?
+  lastLoginIp   String?  @db.VarChar(45)
+  loginCount    Int      @default(0)
+  failedLoginCount Int   @default(0)
+  lockedUntil   DateTime?
+
+  // Verification
+  emailVerified      Boolean   @default(false)
+  emailVerifiedAt    DateTime?
+  passwordResetToken String?
+  passwordResetExpiry DateTime?
+
+  // Relations
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  clinic     Clinic?    @relation(fields: [clinicId], references: [id], onDelete: SetNull)
+  sessions   UserSession[]
+  auditLogs  AuditLog[]
+  enrollmentTokensCreated AgentEnrollmentToken[]
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([clinicId])
+  @@index([email])
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+// ============================================================
+// USER SESSION
+// ============================================================
+
+model UserSession {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String   @db.Uuid
+  sessionToken String @unique @db.Text
+  refreshToken String @unique @db.Text
+  deviceInfo String?  @db.VarChar(500)
+  ipAddress  String?  @db.VarChar(45)
+  userAgent  String?  @db.VarChar(500)
+  expiresAt  DateTime
+  lastUsedAt DateTime @default(now())
+  isRevoked  Boolean  @default(false)
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt  DateTime @default(now())
+
+  @@index([userId])
+  @@index([sessionToken])
+  @@index([refreshToken])
+  @@map("user_sessions")
+}
+
+// ============================================================
+// EDGE AGENT
+// ============================================================
+
+model EdgeAgent {
+  id        String          @id @default(uuid()) @db.Uuid
+  tenantId  String          @db.Uuid
+  clinicId  String          @db.Uuid
+  name      String          @db.VarChar(255)
+  version   String          @db.VarChar(50)
+  status    EdgeAgentStatus @default(OFFLINE)
+  apiKey    String          @unique @db.VarChar(512)
+  apiKeyHash String         @db.VarChar(255)
+
+  // System info
+  hostname   String?  @db.VarChar(255)
+  platform   String?  @db.VarChar(50)
+  osVersion  String?  @db.VarChar(100)
+  ipAddress  String?  @db.VarChar(45)
+
+  // DICOM config
+  dicomAeTitle  String @db.VarChar(16)
+  dicomPort     Int
+  dicomConfig   Json   @default("{}")
+
+  // Metrics (latest snapshot)
+  lastMetrics  Json?
+  lastQueueStats Json?
+
+  // Heartbeat
+  lastHeartbeatAt DateTime?
+  lastSyncAt      DateTime?
+
+  // Remote config applied to agent
+  remoteConfig    Json @default("{}")
+
+  // Relations
+  clinic     Clinic    @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  studies    Study[]
+  syncLogs   SyncLog[]
+  heartbeats EdgeAgentHeartbeat[]
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  @@index([tenantId])
+  @@index([clinicId])
+  @@index([status])
+  @@map("edge_agents")
+}
+
+// ============================================================
+// EDGE AGENT HEARTBEAT (time-series)
+// ============================================================
+
+model EdgeAgentHeartbeat {
+  id        String   @id @default(uuid()) @db.Uuid
+  agentId   String   @db.Uuid
+  status    EdgeAgentStatus
+  metrics   Json
+  queueStats Json
+  ipAddress String?  @db.VarChar(45)
+  timestamp DateTime @default(now())
+
+  agent EdgeAgent @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([timestamp])
+  @@map("edge_agent_heartbeats")
+}
+
+// ============================================================
+// AGENT ENROLLMENT TOKEN (zero-touch provisioning)
+// ============================================================
+
+model AgentEnrollmentToken {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String    @db.Uuid
+  clinicId      String    @db.Uuid
+  name          String    @db.VarChar(255)
+  tokenHash     String    @unique @db.VarChar(64) // sha256 hex digest — plaintext token is shown once and never stored
+  expiresAt     DateTime
+  usedAt        DateTime?
+  createdByUserId String? @db.Uuid
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  clinic        Clinic   @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  createdByUser User?    @relation(fields: [createdByUserId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([clinicId])
+  @@index([expiresAt])
+  @@map("agent_enrollment_tokens")
+}
+
+// ============================================================
+// STORAGE DESTINATION
+// ============================================================
+
+model StorageDestination {
+  id        String                 @id @default(uuid()) @db.Uuid
+  tenantId  String                 @db.Uuid
+  clinicId  String                 @db.Uuid
+  name      String                 @db.VarChar(255)
+  type      StorageDestinationType
+  isDefault Boolean                @default(false)
+  isActive  Boolean                @default(true)
+  config    Json                   @default("{}")
+  // Config is stored encrypted at application level
+
+  lastSyncAt     DateTime?
+  lastSyncStatus String?   @db.VarChar(20)
+  totalSynced    BigInt    @default(0)
+
+  // Relations
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  clinic     Clinic      @relation(fields: [clinicId], references: [id], onDelete: Cascade)
+  exportJobs ExportJob[]
+  syncLogs   SyncLog[]
+  oauthTokens OAuthToken[]
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  deletedAt  DateTime?
+
+  @@index([tenantId])
+  @@index([clinicId])
+  @@index([type])
+  @@map("storage_destinations")
+}
+
+// ============================================================
+// OAUTH TOKEN (Google / Microsoft)
+// ============================================================
+
+model OAuthToken {
+  id           String        @id @default(uuid()) @db.Uuid
+  tenantId     String        @db.Uuid
+  clinicId     String?       @db.Uuid
+  destinationId String?      @db.Uuid
+  provider     OAuthProvider
+  accessToken  String        @db.Text // Encrypted
+  refreshToken String?       @db.Text // Encrypted
+  expiresAt    DateTime?
+  scope        String?       @db.Text
+  accountEmail String?       @db.VarChar(255)
+  accountId    String?       @db.VarChar(255)
+
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  destination StorageDestination? @relation(fields: [destinationId], references: [id], onDelete: SetNull)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([destinationId])
+  @@map("oauth_tokens")
+}
+
+// ============================================================
+// STUDY
+// ============================================================
+
+model Study {
+  id              String       @id @default(uuid()) @db.Uuid
+  tenantId        String       @db.Uuid
+  clinicId        String       @db.Uuid
+  edgeAgentId     String?      @db.Uuid
+
+  // Patient info (LGPD: can be anonymized)
+  patientId       String?      @db.VarChar(100)
+  patientName     String?      @db.VarChar(255)
+  patientBirthDate DateTime?
+  patientSex      String?      @db.VarChar(1)
+
+  // Study info
+  studyInstanceUid String      @db.VarChar(64)
+  accessionNumber  String?     @db.VarChar(50)
+  studyDate        DateTime?
+  studyTime        String?     @db.VarChar(20)
+  studyDescription String?     @db.VarChar(255)
+  modalities       DicomModality[]
+  bodyPartsExamined String[]
+
+  // Storage
+  status           StudyStatus @default(RECEIVING)
+  storagePath      String      @db.VarChar(1024)
+  fileCount        Int         @default(0)
+  totalSizeBytes   BigInt      @default(0)
+  hash             String?     @db.VarChar(64)
+
+  // Equipment
+  institutionName  String?     @db.VarChar(255)
+  stationName      String?     @db.VarChar(100)
+  manufacturer     String?     @db.VarChar(255)
+  modelName        String?     @db.VarChar(255)
+
+  // Export tracking
+  exportedAt       DateTime?
+  lastExportStatus ExportJobStatus?
+
+  // Relations
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
+  clinic        Clinic        @relation(fields: [clinicId], references: [id])
+  edgeAgent     EdgeAgent?    @relation(fields: [edgeAgentId], references: [id])
+  dicomFiles    DicomFile[]
+  dicomMetadata DicomMetadata[]
+  exportJobs    ExportJob[]
+
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  @@unique([tenantId, studyInstanceUid])
+  @@index([tenantId])
+  @@index([clinicId])
+  @@index([edgeAgentId])
+  @@index([status])
+  @@index([studyDate])
+  @@index([patientId])
+  @@index([patientName])
+  @@index([accessionNumber])
+  @@map("studies")
+}
+
+// ============================================================
+// DICOM FILE
+// ============================================================
+
+model DicomFile {
+  id              String  @id @default(uuid()) @db.Uuid
+  studyId         String  @db.Uuid
+  seriesInstanceUid String @db.VarChar(64)
+  sopInstanceUid  String  @db.VarChar(64)
+  sopClassUid     String? @db.VarChar(64)
+  transferSyntaxUid String? @db.VarChar(64)
+  fileName        String  @db.VarChar(255)
+  filePath        String  @db.VarChar(1024)
+  fileSize        BigInt
+  mimeType        String  @default("application/dicom") @db.VarChar(100)
+  hash            String  @db.VarChar(64)
+  isVideo         Boolean @default(false)
+  frameCount      Int?
+  thumbnailPath   String? @db.VarChar(1024)
+  instanceNumber  Int?
+  seriesNumber    Int?
+  isAnonymized    Boolean @default(false)
+
+  study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([studyId, sopInstanceUid])
+  @@index([studyId])
+  @@index([seriesInstanceUid])
+  @@map("dicom_files")
+}
+
+// ============================================================
+// DICOM METADATA (full tag store)
+// ============================================================
+
+model DicomMetadata {
+  id      String @id @default(uuid()) @db.Uuid
+  studyId String @db.Uuid
+  seriesInstanceUid String? @db.VarChar(64)
+  sopInstanceUid    String? @db.VarChar(64)
+  tags    Json   // Full DICOM tag map
+
+  study Study @relation(fields: [studyId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([studyId])
+  @@map("dicom_metadata")
+}
+
+// ============================================================
+// EXPORT JOB
+// ============================================================
+
+model ExportJob {
+  id              String          @id @default(uuid()) @db.Uuid
+  tenantId        String          @db.Uuid
+  clinicId        String          @db.Uuid
+  studyId         String          @db.Uuid
+  destinationId   String          @db.Uuid
+  destinationType StorageDestinationType
+  destinationPath String?         @db.VarChar(1024)
+  status          ExportJobStatus @default(PENDING)
+  priority        Int             @default(5)
+  attempts        Int             @default(0)
+  maxAttempts     Int             @default(5)
+  lastError       String?         @db.Text
+  startedAt       DateTime?
+  completedAt     DateTime?
+  nextRetryAt     DateTime?
+  fileCount       Int             @default(0)
+  filesProcessed  Int             @default(0)
+  totalSizeBytes  BigInt          @default(0)
+  bytesTransferred BigInt         @default(0)
+  transferSpeedBps BigInt?
+  progressPercent Float           @default(0)
+
+  // Chunk upload resume state
+  uploadState     Json?
+
+  // Relations
+  tenant      Tenant             @relation(fields: [tenantId], references: [id])
+  clinic      Clinic             @relation(fields: [clinicId], references: [id])
+  study       Study              @relation(fields: [studyId], references: [id])
+  destination StorageDestination @relation(fields: [destinationId], references: [id])
+  logs        ExportJobLog[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([tenantId])
+  @@index([clinicId])
+  @@index([studyId])
+  @@index([destinationId])
+  @@index([status])
+  @@index([priority, status])
+  @@map("export_jobs")
+}
+
+// ============================================================
+// EXPORT JOB LOG
+// ============================================================
+
+model ExportJobLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  exportJobId String   @db.Uuid
+  level       String   @db.VarChar(10)
+  message     String   @db.Text
+  meta        Json?
+  timestamp   DateTime @default(now())
+
+  exportJob ExportJob @relation(fields: [exportJobId], references: [id], onDelete: Cascade)
+
+  @@index([exportJobId])
+  @@index([timestamp])
+  @@map("export_job_logs")
+}
+
+// ============================================================
+// SYNC LOG
+// ============================================================
+
+model SyncLog {
+  id             String  @id @default(uuid()) @db.Uuid
+  tenantId       String  @db.Uuid
+  clinicId       String  @db.Uuid
+  edgeAgentId    String? @db.Uuid
+  destinationId  String  @db.Uuid
+  studyId        String? @db.Uuid
+  action         String  @db.VarChar(30)
+  status         String  @db.VarChar(20)
+  filesAttempted Int     @default(0)
+  filesSucceeded Int     @default(0)
+  filesFailed    Int     @default(0)
+  bytesTransferred BigInt @default(0)
+  durationMs     Int     @default(0)
+  error          String? @db.Text
+
+  clinic      Clinic             @relation(fields: [clinicId], references: [id])
+  edgeAgent   EdgeAgent?         @relation(fields: [edgeAgentId], references: [id])
+  destination StorageDestination @relation(fields: [destinationId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([clinicId])
+  @@index([destinationId])
+  @@index([createdAt])
+  @@map("sync_logs")
+}
+
+// ============================================================
+// AUDIT LOG (LGPD/HIPAA)
+// ============================================================
+
+model AuditLog {
+  id         String      @id @default(uuid()) @db.Uuid
+  tenantId   String      @db.Uuid
+  clinicId   String?     @db.Uuid
+  userId     String?     @db.Uuid
+  action     AuditAction
+  entityType String?     @db.VarChar(100)
+  entityId   String?     @db.Uuid
+  oldValues  Json?
+  newValues  Json?
+  ipAddress  String?     @db.VarChar(45)
+  userAgent  String?     @db.VarChar(500)
+  requestId  String?     @db.VarChar(100)
+  success    Boolean     @default(true)
+  errorMessage String?   @db.Text
+  metadata   Json?
+
+  tenant Tenant  @relation(fields: [tenantId], references: [id])
+  clinic Clinic? @relation(fields: [clinicId], references: [id])
+  user   User?   @relation(fields: [userId], references: [id])
+  // entityId/entityType is a generic polymorphic reference (EdgeAgent, StorageDestination,
+  // ExportJob, Study, etc.) — intentionally NOT a Prisma relation/FK to any single table.
+
+  createdAt DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([clinicId])
+  @@index([userId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+// ============================================================
+// NOTIFICATION
+// ============================================================
+
+model Notification {
+  id         String             @id @default(uuid()) @db.Uuid
+  tenantId   String             @db.Uuid
+  clinicId   String?            @db.Uuid
+  userId     String?            @db.Uuid
+  type       NotificationType
+  status     NotificationStatus @default(PENDING)
+  subject    String             @db.VarChar(500)
+  body       String             @db.Text
+  metadata   Json               @default("{}")
+  attempts   Int                @default(0)
+  sentAt     DateTime?
+  readAt     DateTime?
+  error      String?            @db.Text
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([status])
+  @@map("notifications")
+}
+
+// ============================================================
+// WEBHOOK CONFIG
+// ============================================================
+
+model WebhookConfig {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @db.Uuid
+  clinicId       String?  @db.Uuid
+  name           String   @db.VarChar(255)
+  url            String   @db.VarChar(1024)
+  secret         String   @db.VarChar(255) // Stored hashed
+  events         String[]
+  isActive       Boolean  @default(true)
+  retryAttempts  Int      @default(3)
+  timeoutSeconds Int      @default(30)
+  lastDeliveryAt DateTime?
+  lastDeliveryStatus Int?
+  deliveryCount  Int      @default(0)
+  failureCount   Int      @default(0)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  @@index([tenantId])
+  @@map("webhook_configs")
+}
+
+// ============================================================
+// SYSTEM SETTINGS
+// ============================================================
+
+model SystemSetting {
+  id       String  @id @default(uuid()) @db.Uuid
+  tenantId String? @db.Uuid
+  clinicId String? @db.Uuid
+  key      String  @db.VarChar(255)
+  value    String  @db.Text
+  isSecret Boolean @default(false)
+  description String? @db.VarChar(500)
+
+  tenant Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, clinicId, key])
+  @@index([tenantId])
+  @@map("system_settings")
+}

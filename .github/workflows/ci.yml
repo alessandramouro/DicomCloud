@@ -1,0 +1,181 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+jobs:
+  # ─── Lint & Type Check ─────────────────────────────────────
+  lint-typecheck:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared packages
+        run: npx turbo run build --filter=@dicomcloud/types
+
+      - name: Lint
+        run: npx turbo run lint
+
+      - name: Type check
+        run: npx turbo run type-check
+
+  # ─── Backend Tests ────────────────────────────────────────
+  test-api:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: dicomcloud_test
+          POSTGRES_USER: dicomcloud
+          POSTGRES_PASSWORD: dicomcloud
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build shared packages
+        run: npx turbo run build --filter=@dicomcloud/types
+
+      - name: Generate Prisma client
+        working-directory: apps/api
+        run: npx prisma generate
+
+      - name: Run migrations (test DB)
+        working-directory: apps/api
+        env:
+          DATABASE_URL: postgresql://dicomcloud:dicomcloud@localhost:5432/dicomcloud_test
+        run: npx prisma migrate deploy
+
+      - name: Run tests
+        working-directory: apps/api
+        env:
+          NODE_ENV: test
+          DATABASE_URL: postgresql://dicomcloud:dicomcloud@localhost:5432/dicomcloud_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-jwt-secret-min-32-chars-12345678
+          JWT_REFRESH_SECRET: test-refresh-secret-min-32-chars-1234
+          ENCRYPTION_KEY: 'test-encryption-key-32chars12345'
+          ENCRYPTION_IV: 'test-iv-16chars!'
+        run: npm test -- --coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./apps/api/coverage
+          flags: api
+
+  # ─── Frontend Tests ───────────────────────────────────────
+  test-web:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build packages
+        run: npx turbo run build --filter=@dicomcloud/types
+
+      - name: Build frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:3001
+          NEXT_PUBLIC_APP_URL: http://localhost:3000
+        run: npx turbo run build --filter=@dicomcloud/web
+
+  # ─── Docker Build ─────────────────────────────────────────
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    needs: [lint-typecheck, test-api]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/api
+          tags: |
+            type=ref,event=branch
+            type=sha,prefix=
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          target: production
+          push: ${{ github.ref == 'refs/heads/main' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

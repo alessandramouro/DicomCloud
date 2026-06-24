@@ -1,0 +1,51 @@
+{
+  // =============================================================================
+  //  DicomCloud — .vscode/extensions.json
+  //  Quando outro dev abrir o projeto, o VS Code sugere instalar tudo isso
+  // =============================================================================
+  "recommendations": [
+    // ── TypeScript / Node.js / NestJS ────────────────────────────────────────
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "loiane.ts-extension-pack",
+    "ashinzekene.nestjs",
+
+    // ── React / Frontend ─────────────────────────────────────────────────────
+    "dsznajder.es7-react-js-snippets",
+    "bradlc.vscode-tailwindcss",
+
+    // ── Docker e Infraestrutura ───────────────────────────────────────────────
+    "ms-azuretools.vscode-docker",
+    "redhat.vscode-yaml",
+    "mikestead.dotenv",
+    "ms-vscode-remote.remote-ssh",
+    "ms-vscode-remote.remote-ssh-edit",
+
+    // ── Banco de Dados ────────────────────────────────────────────────────────
+    "ckolkman.vscode-postgres",
+    "cweijan.vscode-database-client2",
+
+    // ── Git ───────────────────────────────────────────────────────────────────
+    "eamodio.gitlens",
+    "mhutchie.git-graph",
+
+    // ── Testes de API ─────────────────────────────────────────────────────────
+    "rangav.vscode-thunder-client",
+    "humao.rest-client",
+
+    // ── DICOM ─────────────────────────────────────────────────────────────────
+    "ms-dicom.dicom",
+
+    // ── Qualidade de Código ───────────────────────────────────────────────────
+    "sonarsource.sonarlint-vscode",
+    "usernamehw.errorlens",
+    "christian-kohler.path-intellisense",
+
+    // ── Produtividade ─────────────────────────────────────────────────────────
+    "pkief.material-icon-theme",
+    "zhuangtongfa.material-theme",
+    "aaron-bond.better-comments",
+    "wayou.vscode-todo-highlight",
+    "gruntfuggly.todo-tree"
+  ]
+}

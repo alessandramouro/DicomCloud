@@ -1,0 +1,184 @@
+version: '3.9'
+
+# DicomCloud - Development Docker Compose
+# Usage: docker compose up -d
+
+name: dicomcloud
+
+services:
+  # ─── PostgreSQL ───────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: dicomcloud-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dicomcloud
+      POSTGRES_USER: dicomcloud
+      POSTGRES_PASSWORD: dicomcloud
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dicomcloud -d dicomcloud']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dicomcloud-net
+
+  # ─── Redis ───────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: dicomcloud-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    ports:
+      - '6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dicomcloud-net
+
+  # ─── Backend API ─────────────────────────────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: development
+    container_name: dicomcloud-api
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgresql://dicomcloud:dicomcloud@postgres:5432/dicomcloud
+      REDIS_URL: redis://redis:6379
+    ports:
+      - '3001:3001'
+      - '9464:9464'  # Prometheus metrics
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - ./packages:/app/packages
+      - api_storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3001/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - dicomcloud-net
+
+  # ─── Frontend Web ────────────────────────────────────────────
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: development
+    container_name: dicomcloud-web
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:3001
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    ports:
+      - '3000:3000'
+    volumes:
+      - ./apps/web/src:/app/apps/web/src
+      - ./packages:/app/packages
+    depends_on:
+      - api
+    networks:
+      - dicomcloud-net
+
+  # ─── Observability ────────────────────────────────────────────
+
+  # Prometheus
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: dicomcloud-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./infrastructure/docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    ports:
+      - '9090:9090'
+    networks:
+      - dicomcloud-net
+
+  # Grafana
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: dicomcloud-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: dicomcloud
+      GF_INSTALL_PLUGINS: grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infrastructure/docker/grafana/provisioning:/etc/grafana/provisioning
+      - ./infrastructure/docker/grafana/dashboards:/var/lib/grafana/dashboards
+    ports:
+      - '3003:3000'
+    depends_on:
+      - prometheus
+    networks:
+      - dicomcloud-net
+
+  # ─── Mail (dev) ──────────────────────────────────────────────
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: dicomcloud-mailhog
+    restart: unless-stopped
+    ports:
+      - '1025:1025'  # SMTP
+      - '8025:8025'  # Web UI
+    networks:
+      - dicomcloud-net
+
+  # ─── pgAdmin (dev) ────────────────────────────────────────────
+  pgadmin:
+    image: dpage/pgadmin4:8.3
+    container_name: dicomcloud-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@dicomcloud.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DISABLE_POSTFIX: 'true'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    ports:
+      - '5050:80'
+    depends_on:
+      - postgres
+    networks:
+      - dicomcloud-net
+
+networks:
+  dicomcloud-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  api_storage:
+  prometheus_data:
+  grafana_data:
+  pgadmin_data:

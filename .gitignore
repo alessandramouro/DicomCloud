@@ -1,0 +1,92 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Build outputs
+dist
+build
+.next
+out
+.turbo
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.development
+.env.staging
+.env.production
+!.env.example
+
+# Database
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-journal
+prisma/migrations/dev.db
+
+# Runtime/local data
+apps/edge-agent/storage/
+apps/api/storage/uploads/
+.claude/scheduled_tasks.lock
+.claude/settings.local.json
+Skills/files.zip
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE
+.vscode
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea
+*.swp
+*.swo
+*.sublime-workspace
+*.sublime-project
+
+# Coverage
+coverage
+*.lcov
+.nyc_output
+
+# Cache
+.cache
+.eslintcache
+.tsbuildinfo
+*.tsbuildinfo
+
+# Electron
+release/
+out/
+dist/
+
+# DICOM test files
+*.dcm
+*.dicom
+test-dicoms/
+
+# Secrets
+*.pem
+*.key
+*.cert
+*.p12
+secrets/

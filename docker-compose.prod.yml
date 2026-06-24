@@ -1,0 +1,127 @@
+version: '3.9'
+
+# DicomCloud - Production Docker Compose
+# Usage: docker compose -f docker-compose.prod.yml up -d
+
+name: dicomcloud-prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dicomcloud-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME:-dicomcloud}
+      POSTGRES_USER: ${DB_USER:-dicomcloud}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    expose:
+      - '5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-dicomcloud}']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - dicomcloud-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: dicomcloud-redis
+    restart: always
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --appendonly yes
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+    expose:
+      - '6379'
+    networks:
+      - dicomcloud-net
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: production
+    container_name: dicomcloud-api
+    restart: always
+    env_file: .env.production
+    environment:
+      NODE_ENV: production
+    expose:
+      - '3001'
+    volumes:
+      - api_storage:/app/storage
+      - api_logs:/app/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3001/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - dicomcloud-net
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: production
+    container_name: dicomcloud-web
+    restart: always
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${API_URL}
+      NEXT_PUBLIC_APP_URL: ${APP_URL}
+    expose:
+      - '3000'
+    depends_on:
+      - api
+    networks:
+      - dicomcloud-net
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: dicomcloud-nginx
+    restart: always
+    volumes:
+      - ./infrastructure/docker/nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./infrastructure/docker/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_cache:/var/cache/nginx
+    ports:
+      - '80:80'
+      - '443:443'
+    depends_on:
+      - api
+      - web
+    networks:
+      - dicomcloud-net
+
+networks:
+  dicomcloud-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  api_storage:
+  api_logs:
+  nginx_cache:
