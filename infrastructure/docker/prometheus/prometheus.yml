@@ -7,8 +7,8 @@ global:
 scrape_configs:
   - job_name: 'dicomcloud-api'
     static_configs:
-      - targets: ['api:9464']
-    metrics_path: '/metrics'
+      - targets: ['api:3001']
+    metrics_path: '/api/v1/metrics'
 
   - job_name: 'prometheus'
     static_configs:

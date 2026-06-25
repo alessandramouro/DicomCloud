@@ -62,7 +62,6 @@ services:
       REDIS_URL: redis://redis:6379
     ports:
       - '3001:3001'
-      - '9464:9464'  # Prometheus metrics
     volumes:
       - ./apps/api/src:/app/apps/api/src
       - ./packages:/app/packages
@@ -105,6 +104,36 @@ services:
 
   # ─── Observability ────────────────────────────────────────────
 
+  # postgres_exporter (scraped by Prometheus job 'postgres')
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    container_name: dicomcloud-postgres-exporter
+    restart: unless-stopped
+    environment:
+      DATA_SOURCE_NAME: postgresql://dicomcloud:dicomcloud@postgres:5432/dicomcloud?sslmode=disable
+    ports:
+      - '9187:9187'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - dicomcloud-net
+
+  # redis_exporter (scraped by Prometheus job 'redis')
+  redis-exporter:
+    image: oliver006/redis_exporter:v1.62.0
+    container_name: dicomcloud-redis-exporter
+    restart: unless-stopped
+    environment:
+      REDIS_ADDR: redis://redis:6379
+    ports:
+      - '9121:9121'
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - dicomcloud-net
+
   # Prometheus
   prometheus:
     image: prom/prometheus:v2.51.2
@@ -119,6 +148,9 @@ services:
       - prometheus_data:/prometheus
     ports:
       - '9090:9090'
+    depends_on:
+      - postgres-exporter
+      - redis-exporter
     networks:
       - dicomcloud-net
 

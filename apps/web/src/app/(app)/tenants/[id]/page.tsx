@@ -86,11 +86,7 @@ const editTenantSchema = z.object({
   auditLogs: z.boolean().default(true),
   webhooks: z.boolean().default(false),
   dicomAnonymization: z.boolean().default(false),
-  advancedSearch: z.boolean().default(true),
   bulkExport: z.boolean().default(false),
-  apiAccess: z.boolean().default(false),
-  customBranding: z.boolean().default(false),
-  ssoEnabled: z.boolean().default(false),
   worklistEnabled: z.boolean().default(false),
 });
 
@@ -101,19 +97,15 @@ const FEATURE_LABELS: Record<string, string> = {
   auditLogs: 'Logs de Auditoria',
   webhooks: 'Webhooks',
   dicomAnonymization: 'Anonimização DICOM',
-  advancedSearch: 'Busca Avançada',
   bulkExport: 'Exportação em Lote',
-  apiAccess: 'Acesso via API',
-  customBranding: 'Marca Própria',
-  ssoEnabled: 'SSO',
   worklistEnabled: 'Worklist DICOM',
 };
 
 const PLAN_PRESETS: Record<string, Partial<EditTenantForm>> = {
-  FREE:         { maxClinics: 1,  maxUsers: 5,   maxStorageGB: 10,  maxEdgeAgents: 1, bulkExport: false, apiAccess: false, customBranding: false, ssoEnabled: false },
-  STARTER:      { maxClinics: 3,  maxUsers: 10,  maxStorageGB: 100, maxEdgeAgents: 5, bulkExport: false, apiAccess: false, customBranding: false, ssoEnabled: false },
-  PROFESSIONAL: { maxClinics: 10, maxUsers: 50,  maxStorageGB: 500, maxEdgeAgents: 20, bulkExport: true,  apiAccess: true,  customBranding: false, ssoEnabled: false },
-  ENTERPRISE:   { maxClinics: -1, maxUsers: -1,  maxStorageGB: -1,  maxEdgeAgents: -1, bulkExport: true,  apiAccess: true,  customBranding: true,  ssoEnabled: true  },
+  FREE:         { maxClinics: 1,  maxUsers: 5,   maxStorageGB: 10,  maxEdgeAgents: 1, bulkExport: false },
+  STARTER:      { maxClinics: 3,  maxUsers: 10,  maxStorageGB: 100, maxEdgeAgents: 5, bulkExport: false },
+  PROFESSIONAL: { maxClinics: 10, maxUsers: 50,  maxStorageGB: 500, maxEdgeAgents: 20, bulkExport: true },
+  ENTERPRISE:   { maxClinics: -1, maxUsers: -1,  maxStorageGB: -1,  maxEdgeAgents: -1, bulkExport: true },
 };
 
 function EditTenantModal({ tenant, onClose }: { tenant: TenantDetail | null; onClose: () => void }) {
@@ -150,12 +142,12 @@ function EditTenantModal({ tenant, onClose }: { tenant: TenantDetail | null; onC
   const mutation = useMutation({
     mutationFn: (data: EditTenantForm) => {
       const { maxClinics, maxUsers, maxStorageGB, maxEdgeAgents, mfa, auditLogs, webhooks,
-        dicomAnonymization, advancedSearch, bulkExport, apiAccess, customBranding, ssoEnabled, worklistEnabled,
+        dicomAnonymization, bulkExport, worklistEnabled,
         ...rest } = data;
       return api.put(`/tenants/${tenant!.id}`, {
         ...rest,
         quotas: { ...tenant!.quotas, maxClinics, maxUsers, maxStorageGB, maxEdgeAgents },
-        features: { mfa, auditLogs, webhooks, dicomAnonymization, advancedSearch, bulkExport, apiAccess, customBranding, ssoEnabled, worklistEnabled },
+        features: { mfa, auditLogs, webhooks, dicomAnonymization, bulkExport, worklistEnabled },
       });
     },
     onSuccess: () => {
@@ -523,11 +515,7 @@ export default function TenantDetailPage() {
             auditLogs: 'Auditoria',
             webhooks: 'Webhooks',
             dicomAnonymization: 'Anonimização',
-            advancedSearch: 'Busca Avançada',
             bulkExport: 'Export em Lote',
-            apiAccess: 'Acesso API',
-            customBranding: 'Marca Própria',
-            ssoEnabled: 'SSO',
             worklistEnabled: 'Worklist',
           }).map(([key, label]) => (
             <div key={key} className={cn(

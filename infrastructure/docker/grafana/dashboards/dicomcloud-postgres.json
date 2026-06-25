@@ -1,0 +1,60 @@
+{
+  "uid": "dicomcloud-postgres",
+  "title": "DicomCloud - PostgreSQL",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["dicomcloud"],
+  "timezone": "browser",
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Postgres Up",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "targets": [{ "refId": "A", "expr": "pg_up" }]
+    },
+    {
+      "id": 2,
+      "title": "Database Size",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "pg_database_size_bytes{datname=\"dicomcloud\"}" }]
+    },
+    {
+      "id": 3,
+      "title": "Active Connections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        { "refId": "A", "expr": "pg_stat_database_numbackends{datname=\"dicomcloud\"}", "legendFormat": "connections" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Transactions/sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "targets": [
+        { "refId": "A", "expr": "rate(pg_stat_database_xact_commit{datname=\"dicomcloud\"}[5m])", "legendFormat": "commits/s" },
+        { "refId": "B", "expr": "rate(pg_stat_database_xact_rollback{datname=\"dicomcloud\"}[5m])", "legendFormat": "rollbacks/s" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Cache Hit Ratio",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1, "min": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(pg_stat_database_blks_hit{datname=\"dicomcloud\"}[5m])) / (sum(rate(pg_stat_database_blks_hit{datname=\"dicomcloud\"}[5m])) + sum(rate(pg_stat_database_blks_read{datname=\"dicomcloud\"}[5m])))",
+          "legendFormat": "hit ratio"
+        }
+      ]
+    }
+  ]
+}

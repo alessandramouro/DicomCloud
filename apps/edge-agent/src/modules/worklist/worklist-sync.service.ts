@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { spawn } from 'child_process';
 import * as fs from 'fs-extra';
 import * as path from 'path';
+import { CloudApiService } from '../cloud-api/cloud-api.service';
 
 /**
  * Periodically queries the clinic's HIS/RIS via dcmtk's findscu (a real C-FIND SCU)
@@ -10,6 +11,13 @@ import * as path from 'path';
  * dcmtk's own wlmsetup.txt) selects a "storage area" subdirectory named after the
  * CALLED AE title and only reads files with a .wl extension from it — findscu's
  * --extract writes plain .dcm files, so this service renames them into place.
+ *
+ * Worklist is enabled/configured at two levels: local env vars (DICOM_WORKLIST_*,
+ * set once at deployment) and the cloud-managed clinic setting (toggled live from
+ * the tenant admin UI, gated by the tenant's plan). The cloud value — refreshed
+ * every sync cycle via CloudApiService — takes precedence whenever the agent can
+ * reach the API; local env vars are the fallback for agents not yet enrolled or
+ * temporarily offline, so existing on-prem deployments keep working unattended.
  */
 @Injectable()
 export class WorklistSyncService implements OnModuleInit, OnModuleDestroy {
@@ -17,20 +25,31 @@ export class WorklistSyncService implements OnModuleInit, OnModuleDestroy {
   private readonly worklistDir: string;
   private readonly aeDir: string;
   private readonly intervalMs: number;
+  private readonly localEnabled: boolean;
+  private readonly localHisUrl: string;
   private isSyncing = false;
   private timer?: NodeJS.Timeout;
 
-  constructor(private readonly configService: ConfigService) {
+  /** undefined = no successful cloud fetch yet; fall back to local env config. */
+  private cloudConfig?: { enabled: boolean; hisUrl?: string; aeTitle?: string };
+
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly cloudApiService: CloudApiService,
+  ) {
     this.worklistDir = path.resolve(this.configService.get<string>('dicom.worklist.dir', './storage/worklist'));
     this.aeDir = path.join(this.worklistDir, this.configService.get<string>('dicom.aeTitle', 'DICOMCLOUD'));
     this.intervalMs = this.configService.get<number>('dicom.worklist.cacheMinutes', 5) * 60 * 1000;
+    this.localEnabled = this.configService.get<boolean>('dicom.worklist.enabled', false);
+    this.localHisUrl = this.configService.get<string>('dicom.worklist.hisUrl', '');
   }
 
   async onModuleInit() {
     await fs.ensureDir(this.aeDir);
     await fs.ensureFile(path.join(this.aeDir, 'lockfile'));
-    if (!this.isEnabled()) return;
 
+    // Always schedule the timer, even if disabled right now — the cloud toggle can
+    // flip it on later without an agent restart, and syncFromHis() no-ops when disabled.
     this.syncFromHis().catch((err) => this.logger.error(`Initial worklist sync failed: ${(err as Error).message}`));
     this.timer = setInterval(() => {
       this.syncFromHis().catch((err) => this.logger.error(`Worklist sync failed: ${(err as Error).message}`));
@@ -41,31 +60,44 @@ export class WorklistSyncService implements OnModuleInit, OnModuleDestroy {
     if (this.timer) clearInterval(this.timer);
   }
 
+  private async refreshCloudConfig(): Promise<void> {
+    const config = await this.cloudApiService.getWorklistConfig();
+    if (config) this.cloudConfig = config;
+  }
+
   private isEnabled(): boolean {
-    return (
-      this.configService.get<boolean>('dicom.worklist.enabled', false) &&
-      !!this.configService.get<string>('dicom.worklist.hisUrl', '')
-    );
+    if (this.cloudConfig) return this.cloudConfig.enabled && !!this.cloudConfig.hisUrl;
+    return this.localEnabled && !!this.localHisUrl;
+  }
+
+  private getHisUrl(): string {
+    return this.cloudConfig?.hisUrl || this.localHisUrl;
+  }
+
+  private getOurAeTitle(): string {
+    return this.cloudConfig?.aeTitle || this.configService.get<string>('dicom.aeTitle', 'DICOMCLOUD');
   }
 
   async syncFromHis(): Promise<void> {
-    if (this.isSyncing || !this.isEnabled()) return;
-    this.isSyncing = true;
+    if (this.isSyncing) return;
+    await this.refreshCloudConfig();
+    if (!this.isEnabled()) return;
 
+    this.isSyncing = true;
     const tempDir = path.join(this.worklistDir, `.sync-${Date.now()}`);
 
     try {
-      const hisUrl = this.configService.get<string>('dicom.worklist.hisUrl', '');
+      const hisUrl = this.getHisUrl();
       const [host, portStr] = hisUrl.split(':');
       const port = parseInt(portStr, 10);
       if (!host || !port) {
-        this.logger.warn(`Invalid dicom.worklist.hisUrl "${hisUrl}" — expected "host:port"`);
+        this.logger.warn(`Invalid worklist HIS URL "${hisUrl}" — expected "host:port"`);
         return;
       }
 
       await fs.ensureDir(tempDir);
 
-      const ourAeTitle = this.configService.get<string>('dicom.aeTitle', 'DICOMCLOUD');
+      const ourAeTitle = this.getOurAeTitle();
       const hisAeTitle = this.configService.get<string>('dicom.worklist.hisAeTitle', 'ANY-SCP');
       // Local date, not UTC — scheduled procedures are dated in the clinic's own
       // timezone, and toISOString() would query the wrong day for several hours

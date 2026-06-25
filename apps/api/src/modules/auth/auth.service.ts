@@ -256,6 +256,15 @@ export class AuthService {
 
   async setupMfa(userId: string): Promise<MfaSetupResponse> {
     const user = await this.prisma.user.findUniqueOrThrow({ where: { id: userId } });
+
+    if (user.role !== 'SUPER_ADMIN') {
+      const tenant = await this.prisma.tenant.findUniqueOrThrow({ where: { id: user.tenantId } });
+      const features = tenant.features as Record<string, boolean>;
+      if (!features.mfa) {
+        throw new ForbiddenException('MFA não está disponível no plano deste tenant');
+      }
+    }
+
     const secret = authenticator.generateSecret(32);
     const otpAuthUrl = authenticator.keyuri(user.email, 'DicomCloud', secret);
     const qrCodeUrl = await qrcode.toDataURL(otpAuthUrl);

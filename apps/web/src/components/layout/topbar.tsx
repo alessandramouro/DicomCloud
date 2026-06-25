@@ -3,6 +3,7 @@
 import { Bell, Search, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth.store';
 
 const routeTitles: Record<string, string> = {
@@ -14,6 +15,7 @@ const routeTitles: Record<string, string> = {
   '/storage': 'Configuração de Storage',
   '/audit': 'Auditoria',
   '/settings': 'Configurações',
+  '/profile': 'Minha Conta',
 };
 
 export function TopBar() {
@@ -55,11 +57,15 @@ export function TopBar() {
         </button>
 
         {/* User avatar */}
-        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center ml-1">
+        <Link
+          href="/profile"
+          title="Minha Conta"
+          className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center ml-1 hover:ring-2 hover:ring-primary/40 transition-all"
+        >
           <span className="text-xs font-bold text-primary">
             {user?.name?.charAt(0)?.toUpperCase()}
           </span>
-        </div>
+        </Link>
       </div>
     </header>
   );

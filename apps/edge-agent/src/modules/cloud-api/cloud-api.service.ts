@@ -76,4 +76,17 @@ export class CloudApiService {
       return [];
     }
   }
+
+  /** Cloud-managed worklist config — set on the clinic, gated by the tenant's plan. Null if unreachable/not enrolled. */
+  async getWorklistConfig(): Promise<{ enabled: boolean; hisUrl?: string; aeTitle?: string } | null> {
+    if (!this.agentId) return null;
+
+    try {
+      const res = await this.client.get(`/agents/${this.agentId}/runtime-config`);
+      return res.data?.data?.worklist ?? null;
+    } catch (err) {
+      this.logger.debug(`Failed to fetch worklist config from cloud: ${(err as Error).message}`);
+      return null;
+    }
+  }
 }

@@ -9,5 +9,4 @@ export default registerAs('app', () => ({
   edgeAgentUrl: process.env.EDGE_AGENT_URL || 'http://localhost:3002',
   encryptionKey: process.env.ENCRYPTION_KEY || '',
   encryptionIv: process.env.ENCRYPTION_IV || '',
-  featureAnonymization: process.env.FEATURE_ANONYMIZATION === 'true',
 }));

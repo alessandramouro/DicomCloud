@@ -215,7 +215,7 @@ export default function SettingsPage() {
                 {saved && (
                   <span className="text-status-success flex items-center gap-1">
                     <CheckCircle size={12} />
-                    Salvo! {mutation.data?.data?.message}
+                    Salvo! {mutation.data?.data?.data?.message}
                   </span>
                 )}
                 {!saved && !mutation.isError && (

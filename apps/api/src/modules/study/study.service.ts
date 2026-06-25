@@ -8,6 +8,7 @@ import { JwtPayload } from '@dicomcloud/types';
 import { StudyQueryDto } from './dto/study-query.dto';
 import { IngestStudyDto } from './dto/ingest-study.dto';
 import { parsePagination, buildPaginatedResponse, buildOrderBy } from '../../common/utils/pagination.util';
+import { studiesIngestedTotal } from '../../common/metrics/app-metrics';
 import { createHash } from 'crypto';
 
 @Injectable()
@@ -155,6 +156,8 @@ export class StudyService {
         modelName: dto.modelName,
       },
     });
+
+    studiesIngestedTotal.inc({ modality: dto.modalities?.[0] || 'UNKNOWN' });
 
     this.eventEmitter.emit('study.received', {
       studyId: study.id,

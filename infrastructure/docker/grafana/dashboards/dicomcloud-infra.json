@@ -1,0 +1,73 @@
+{
+  "uid": "dicomcloud-infra",
+  "title": "DicomCloud - API Process Health",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["dicomcloud"],
+  "timezone": "browser",
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "CPU Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "percentunit" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "rate(dicomcloud_api_process_cpu_seconds_total[5m])", "legendFormat": "cpu" }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Memory Usage",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "dicomcloud_api_process_resident_memory_bytes", "legendFormat": "RSS" },
+        { "refId": "B", "expr": "dicomcloud_api_nodejs_heap_size_used_bytes", "legendFormat": "Heap used" },
+        { "refId": "C", "expr": "dicomcloud_api_nodejs_heap_size_total_bytes", "legendFormat": "Heap total" }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Event Loop Lag",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "dicomcloud_api_nodejs_eventloop_lag_seconds", "legendFormat": "lag" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "GC Duration (rate)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "rate(dicomcloud_api_nodejs_gc_duration_seconds_sum[5m])", "legendFormat": "{{kind}}" }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Active Handles",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "targets": [
+        { "refId": "A", "expr": "dicomcloud_api_nodejs_active_handles_total", "legendFormat": "{{type}}" }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Process Uptime",
+      "type": "stat",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "refId": "A", "expr": "time() - dicomcloud_api_process_start_time_seconds" }
+      ]
+    }
+  ]
+}

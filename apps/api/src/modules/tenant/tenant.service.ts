@@ -45,7 +45,7 @@ export class TenantService {
           billingEmail: dto.billingEmail as string,
           settings: { timezone: 'America/Sao_Paulo', locale: 'pt-BR', dateFormat: 'DD/MM/YYYY', autoExportEnabled: true },
           quotas: { maxClinics: 3, maxUsers: 10, maxStorageGB: 100, maxEdgeAgents: 5, usedStorageGB: 0, studiesThisMonth: 0 },
-          features: { mfa: false, auditLogs: true, webhooks: false, dicomAnonymization: false, advancedSearch: true, bulkExport: false, apiAccess: false, customBranding: false, ssoEnabled: false, worklistEnabled: false },
+          features: { mfa: false, auditLogs: true, webhooks: false, dicomAnonymization: false, bulkExport: false, worklistEnabled: false },
         },
       });
 

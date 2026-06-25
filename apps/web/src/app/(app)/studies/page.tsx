@@ -13,6 +13,7 @@ import { usePermission } from '@/hooks/use-permission';
 import { exportToExcel } from '@/lib/export-excel';
 import { getSocket } from '@/lib/socket';
 import { ExportDialog } from '@/components/studies/export-dialog';
+import { BulkExportDialog } from '@/components/studies/bulk-export-dialog';
 
 const MODALITIES = ['US', 'CT', 'MR', 'XR', 'CR', 'NM', 'MG'];
 const STATUSES = ['RECEIVED', 'EXPORTED', 'EXPORT_FAILED', 'QUEUED_EXPORT', 'PROCESSING'];
@@ -34,6 +35,8 @@ export default function StudiesPage() {
   const [exportStudy, setExportStudy] = useState<Study | null>(null);
   const [exportProgress, setExportProgress] = useState<Record<string, ExportRowState>>({});
   const jobToStudy = useRef<Record<string, string>>({});
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkExportOpen, setBulkExportOpen] = useState(false);
 
   useEffect(() => {
     const socket = getSocket();
@@ -93,6 +96,34 @@ export default function StudiesPage() {
   const studies = data?.data || [];
   const meta = data?.meta;
 
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [page, search, selectedModality, selectedStatus, dateFrom, dateTo]);
+
+  const toggleSelected = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const allOnPageSelected = studies.length > 0 && studies.every((s) => selectedIds.has(s.id));
+  const toggleSelectAll = () => {
+    setSelectedIds((prev) => {
+      if (allOnPageSelected) {
+        const next = new Set(prev);
+        studies.forEach((s) => next.delete(s.id));
+        return next;
+      }
+      const next = new Set(prev);
+      studies.forEach((s) => next.add(s.id));
+      return next;
+    });
+  };
+
+  const selectedStudies = studies.filter((s) => selectedIds.has(s.id));
+
   const [isExporting, setIsExporting] = useState(false);
 
   const handleExcelExport = async () => {
@@ -118,7 +149,6 @@ export default function StudiesPage() {
         { header: 'Arquivos', key: 'fileCount', width: 10 },
         { header: 'Tamanho', key: (r) => formatBytes(r.totalSizeBytes || 0), width: 14 },
         { header: 'Recebido em', key: (r) => formatDate(r.createdAt), width: 16 },
-        { header: 'AE Title', key: 'sourceAeTitle', width: 16 },
       ], 'estudos_dicom', 'Estudos DICOM');
     } finally {
       setIsExporting(false);
@@ -176,6 +206,28 @@ export default function StudiesPage() {
           {isExporting ? 'Exportando...' : 'Excel'}
         </button>
       </div>
+
+      {/* Bulk selection bar */}
+      {can('studies:export') && selectedIds.size > 0 && (
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-primary/5 border border-primary/20 rounded-xl">
+          <span className="text-sm text-foreground font-medium">
+            {selectedIds.size} estudo{selectedIds.size > 1 ? 's' : ''} selecionado{selectedIds.size > 1 ? 's' : ''}
+          </span>
+          <button
+            onClick={() => setBulkExportOpen(true)}
+            className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            <Download size={14} />
+            Exportar selecionados
+          </button>
+          <button
+            onClick={() => setSelectedIds(new Set())}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors ml-auto"
+          >
+            Limpar seleção
+          </button>
+        </div>
+      )}
 
       {/* Filters Panel */}
       {showFilters && (
@@ -246,6 +298,17 @@ export default function StudiesPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-muted/30">
+                {can('studies:export') && (
+                  <th className="px-4 py-3 w-10">
+                    <input
+                      type="checkbox"
+                      checked={allOnPageSelected}
+                      onChange={toggleSelectAll}
+                      className="accent-primary"
+                      disabled={studies.length === 0}
+                    />
+                  </th>
+                )}
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Paciente</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Accession</th>
                 <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">Modalidade</th>
@@ -260,7 +323,7 @@ export default function StudiesPage() {
               {isLoading ? (
                 [...Array(10)].map((_, i) => (
                   <tr key={i} className="border-b border-border last:border-0">
-                    {[...Array(8)].map((_, j) => (
+                    {[...Array(9)].map((_, j) => (
                       <td key={j} className="px-4 py-3">
                         <div className="h-4 skeleton rounded" style={{ width: `${60 + Math.random() * 40}%` }} />
                       </td>
@@ -269,7 +332,7 @@ export default function StudiesPage() {
                 ))
               ) : studies.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 py-12 text-center text-muted-foreground text-sm">
+                  <td colSpan={9} className="px-4 py-12 text-center text-muted-foreground text-sm">
                     Nenhum estudo encontrado
                   </td>
                 </tr>
@@ -280,6 +343,16 @@ export default function StudiesPage() {
                     className="border-b border-border last:border-0 hover:bg-muted/20 cursor-pointer transition-colors"
                     onClick={() => window.location.href = `/studies/${study.id}`}
                   >
+                    {can('studies:export') && (
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(study.id)}
+                          onChange={() => toggleSelected(study.id)}
+                          className="accent-primary"
+                        />
+                      </td>
+                    )}
                     <td className="px-4 py-3">
                       <p className="font-medium text-foreground">{study.patientName || '—'}</p>
                       <p className="text-xs text-muted-foreground">{study.patientId || ''}</p>
@@ -406,6 +479,24 @@ export default function StudiesPage() {
           setExportProgress((prev) => ({ ...prev, [studyId]: { status: 'started', progressPercent: 0 } }));
         }}
       />
+
+      {bulkExportOpen && (
+        <BulkExportDialog
+          studies={selectedStudies}
+          onClose={() => setBulkExportOpen(false)}
+          onStarted={(results) => {
+            setExportProgress((prev) => {
+              const next = { ...prev };
+              for (const { jobId, studyId } of results) {
+                jobToStudy.current[jobId] = studyId;
+                next[studyId] = { status: 'started', progressPercent: 0 };
+              }
+              return next;
+            });
+            setSelectedIds(new Set());
+          }}
+        />
+      )}
     </div>
   );
 }

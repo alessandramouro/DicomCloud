@@ -1,0 +1,55 @@
+{
+  "uid": "dicomcloud-redis",
+  "title": "DicomCloud - Redis",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["dicomcloud"],
+  "timezone": "browser",
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Redis Up",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+      "targets": [{ "refId": "A", "expr": "redis_up" }]
+    },
+    {
+      "id": 2,
+      "title": "Memory Used",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [] },
+      "targets": [{ "refId": "A", "expr": "redis_memory_used_bytes" }]
+    },
+    {
+      "id": 3,
+      "title": "Connected Clients",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [{ "refId": "A", "expr": "redis_connected_clients", "legendFormat": "clients" }]
+    },
+    {
+      "id": 4,
+      "title": "Commands/sec",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
+      "targets": [{ "refId": "A", "expr": "rate(redis_commands_processed_total[5m])", "legendFormat": "cmds/s" }]
+    },
+    {
+      "id": 5,
+      "title": "Keyspace Hit Rate",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "max": 1, "min": 0 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "rate(redis_keyspace_hits_total[5m]) / (rate(redis_keyspace_hits_total[5m]) + rate(redis_keyspace_misses_total[5m]))",
+          "legendFormat": "hit rate"
+        }
+      ]
+    }
+  ]
+}

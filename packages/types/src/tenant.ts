@@ -44,11 +44,7 @@ export interface TenantFeatures {
   auditLogs: boolean;
   webhooks: boolean;
   dicomAnonymization: boolean;
-  advancedSearch: boolean;
   bulkExport: boolean;
-  apiAccess: boolean;
-  customBranding: boolean;
-  ssoEnabled: boolean;
   worklistEnabled: boolean;
 }
 

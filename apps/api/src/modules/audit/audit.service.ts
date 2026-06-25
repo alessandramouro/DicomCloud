@@ -2,6 +2,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditAction, Prisma } from '@prisma/client';
 
+/** Used when no real tenant is resolvable (e.g. LOGIN_FAILED for an unknown/wrong-password attempt). Seeded by migration 20260624193425. */
+const SYSTEM_TENANT_ID = '00000000-0000-0000-0000-000000000001';
+
 interface AuditLogParams {
   tenantId?: string;
   clinicId?: string;
@@ -27,9 +30,18 @@ export class AuditService {
 
   async log(params: AuditLogParams): Promise<void> {
     try {
+      const tenantId = params.tenantId || SYSTEM_TENANT_ID;
+
+      const tenant = await this.prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: { features: true },
+      });
+      const features = (tenant?.features as Record<string, boolean>) ?? {};
+      if (features.auditLogs === false) return; // tenant explicitly opted out
+
       await this.prisma.auditLog.create({
         data: {
-          tenantId: params.tenantId || '00000000-0000-0000-0000-000000000001',
+          tenantId,
           clinicId: params.clinicId,
           userId: params.userId,
           action: params.action,

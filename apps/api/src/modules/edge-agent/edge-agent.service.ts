@@ -166,10 +166,16 @@ export class EdgeAgentService {
     const agent = await this.prisma.edgeAgent.findFirst({ where: { id, deletedAt: null } });
     if (!agent) throw new NotFoundException('Agent not found');
 
-    const destinations = await this.prisma.storageDestination.findMany({
-      where: { clinicId: agent.clinicId, isActive: true, deletedAt: null },
-      select: { id: true, name: true, type: true, isDefault: true, config: true },
-    });
+    const [destinations, clinic] = await Promise.all([
+      this.prisma.storageDestination.findMany({
+        where: { clinicId: agent.clinicId, isActive: true, deletedAt: null },
+        select: { id: true, name: true, type: true, isDefault: true, config: true },
+      }),
+      this.prisma.clinic.findUniqueOrThrow({
+        where: { id: agent.clinicId },
+        include: { tenant: { select: { features: true } } },
+      }),
+    ]);
 
     const key = this.configService.get<string>('app.encryptionKey')!;
     const storageDestinations = destinations.map((d) => ({
@@ -177,9 +183,17 @@ export class EdgeAgentService {
       config: EncryptionUtil.decryptFields(d.config as Record<string, unknown>, SENSITIVE_CONFIG_FIELDS, key),
     }));
 
+    const tenantFeatures = clinic.tenant.features as Record<string, boolean>;
+    const worklist = {
+      enabled: !!(tenantFeatures.worklistEnabled && clinic.worklistEnabled && clinic.worklistHisUrl),
+      hisUrl: clinic.worklistHisUrl ?? undefined,
+      aeTitle: clinic.worklistAeTitle ?? undefined,
+    };
+
     return {
       remoteConfig: agent.remoteConfig,
       storageDestinations,
+      worklist,
     };
   }
 

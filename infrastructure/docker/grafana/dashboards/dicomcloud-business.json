@@ -1,0 +1,87 @@
+{
+  "uid": "dicomcloud-business",
+  "title": "DicomCloud - Business Metrics",
+  "schemaVersion": 39,
+  "version": 1,
+  "tags": ["dicomcloud"],
+  "timezone": "browser",
+  "time": { "from": "now-6h", "to": "now" },
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Studies Ingested (rate, by modality)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(dicomcloud_studies_ingested_total[5m])) by (modality)",
+          "legendFormat": "{{modality}}"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Export Jobs (rate, by status/destination)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(dicomcloud_export_jobs_total[5m])) by (status, destination_type)",
+          "legendFormat": "{{status}} / {{destination_type}}"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Edge Agents Connected",
+      "type": "stat",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 8 },
+      "targets": [
+        { "refId": "A", "expr": "dicomcloud_edge_agents_connected" }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "HTTP Error Rate (5xx)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 9, "x": 6, "y": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(dicomcloud_http_request_duration_seconds_count{status_code=~\"5..\"}[5m]))",
+          "legendFormat": "5xx/s"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "HTTP Request Rate (by route)",
+      "type": "timeseries",
+      "gridPos": { "h": 6, "w": 9, "x": 15, "y": 8 },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "sum(rate(dicomcloud_http_request_duration_seconds_count[5m])) by (route)",
+          "legendFormat": "{{route}}"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "HTTP p95 Latency (by route)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 14 },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "histogram_quantile(0.95, sum(rate(dicomcloud_http_request_duration_seconds_bucket[5m])) by (le, route))",
+          "legendFormat": "{{route}}"
+        }
+      ]
+    }
+  ]
+}

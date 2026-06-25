@@ -141,6 +141,7 @@ Include tenant context via JWT claims or \`X-Tenant-ID\` header.
       .addTag('agents', 'Edge Agent Management')
       .addTag('notifications', 'Notification Management')
       .addTag('audit', 'Audit Logs')
+      .addTag('webhooks', 'Webhook Configuration')
       .addTag('health', 'Health Checks')
       .addTag('metrics', 'Metrics & Observability')
       .addServer(apiUrl, 'Current environment')

@@ -16,6 +16,7 @@ import type { JwtPayload, ExportCommandPayload, ExportProgressEvent, ExportResul
 import { Public } from '../../common/decorators/roles.decorator';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EdgeAgentService } from '../edge-agent/edge-agent.service';
+import { edgeAgentsConnected } from '../../common/metrics/app-metrics';
 
 /**
  * Single gateway serving two kinds of clients on the same /realtime namespace:
@@ -78,6 +79,7 @@ export class ExportGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
         client.data.agentId = auth.agentId;
         this.agentSockets.set(auth.agentId, client.id);
+        edgeAgentsConnected.set(this.agentSockets.size);
         await client.join(`agent:${auth.agentId}`);
         this.logger.log(`Edge agent connected: ${auth.agentId}`);
         return;
@@ -94,6 +96,7 @@ export class ExportGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const agentId = client.data?.agentId as string | undefined;
     if (agentId && this.agentSockets.get(agentId) === client.id) {
       this.agentSockets.delete(agentId);
+      edgeAgentsConnected.set(this.agentSockets.size);
       this.logger.log(`Edge agent disconnected: ${agentId}`);
     }
   }

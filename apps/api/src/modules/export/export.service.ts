@@ -8,6 +8,7 @@ import { AuditService } from '../audit/audit.service';
 import { EncryptionUtil, SENSITIVE_CONFIG_FIELDS } from '../../common/utils/encryption.util';
 import { ExportGateway } from '../realtime/export.gateway';
 import { JwtPayload, ExportProgressEvent, StorageDestinationType } from '@dicomcloud/types';
+import { exportJobsTotal } from '../../common/metrics/app-metrics';
 
 @Injectable()
 export class ExportService {
@@ -27,6 +28,55 @@ export class ExportService {
     destinationId: string,
     currentUser: JwtPayload,
   ) {
+    const destination = await this.prisma.storageDestination.findFirst({
+      where: { id: destinationId, tenantId: currentUser.tenantId, deletedAt: null },
+    });
+    if (!destination) throw new NotFoundException('Storage destination not found');
+
+    return this.dispatchExportJob(studyId, destination, currentUser);
+  }
+
+  /**
+   * One ExportJob per study, same destination, gated by the tenant's bulkExport plan
+   * feature. Tolerant of partial failure — a study that 404s or belongs to another
+   * clinic doesn't abort the rest of the batch, it's just reported back as an error
+   * entry alongside the successes.
+   */
+  async createBulkExportJobs(
+    studyIds: string[],
+    destinationId: string,
+    currentUser: JwtPayload,
+  ) {
+    const tenant = await this.prisma.tenant.findUniqueOrThrow({ where: { id: currentUser.tenantId } });
+    const features = tenant.features as Record<string, boolean>;
+    if (currentUser.role !== 'SUPER_ADMIN' && !features.bulkExport) {
+      throw new ForbiddenException('Exportação em lote não está disponível no plano deste tenant');
+    }
+
+    const destination = await this.prisma.storageDestination.findFirst({
+      where: { id: destinationId, tenantId: currentUser.tenantId, deletedAt: null },
+    });
+    if (!destination) throw new NotFoundException('Storage destination not found');
+
+    const results: Array<{ studyId: string; jobId?: string; error?: string }> = [];
+
+    for (const studyId of studyIds) {
+      try {
+        const job = await this.dispatchExportJob(studyId, destination, currentUser);
+        results.push({ studyId, jobId: job.id });
+      } catch (err) {
+        results.push({ studyId, error: (err as Error).message });
+      }
+    }
+
+    return results;
+  }
+
+  private async dispatchExportJob(
+    studyId: string,
+    destination: { id: string; type: StorageDestinationType },
+    currentUser: JwtPayload,
+  ) {
     const study = await this.prisma.study.findFirst({
       where: { id: studyId, tenantId: currentUser.tenantId, deletedAt: null },
     });
@@ -41,17 +91,12 @@ export class ExportService {
       throw new ForbiddenException('Access denied to this study');
     }
 
-    const destination = await this.prisma.storageDestination.findFirst({
-      where: { id: destinationId, tenantId: currentUser.tenantId, deletedAt: null },
-    });
-    if (!destination) throw new NotFoundException('Storage destination not found');
-
     const job = await this.prisma.exportJob.create({
       data: {
         tenantId: currentUser.tenantId,
         clinicId: study.clinicId,
         studyId,
-        destinationId,
+        destinationId: destination.id,
         destinationType: destination.type,
         status: 'PENDING',
       },
@@ -120,6 +165,7 @@ export class ExportService {
       data: { status: 'FAILED', lastError: message },
     });
 
+    exportJobsTotal.inc({ status: 'FAILED', destination_type: job.destinationType });
     await this.appendLog(jobId, 'error', message);
     await this.auditService.log({
       tenantId: job.tenantId,
@@ -168,6 +214,8 @@ export class ExportService {
       where: { id: jobId },
       data: { status: 'COMPLETED', completedAt: new Date(), progressPercent: 100 },
     });
+
+    exportJobsTotal.inc({ status: 'COMPLETED', destination_type: job.destinationType });
 
     await this.prisma.study.update({
       where: { id: job.studyId },
@@ -224,6 +272,7 @@ export class ExportService {
       data: { status: 'FAILED', attempts: nextAttempts, lastError: errorMessage },
     });
 
+    exportJobsTotal.inc({ status: 'FAILED', destination_type: job.destinationType });
     await this.appendLog(jobId, 'error', `Export failed permanently: ${errorMessage}`);
     await this.auditService.log({
       tenantId: job.tenantId,

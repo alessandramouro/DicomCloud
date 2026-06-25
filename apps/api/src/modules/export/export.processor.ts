@@ -1,7 +1,6 @@
 import { Processor, Process } from '@nestjs/bull';
 import { Job } from 'bull';
 import { Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ExportService } from './export.service';
 import { ExportGateway } from '../realtime/export.gateway';
@@ -17,7 +16,6 @@ export class ExportProcessor {
     private readonly prisma: PrismaService,
     private readonly exportService: ExportService,
     private readonly exportGateway: ExportGateway,
-    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -29,7 +27,10 @@ export class ExportProcessor {
   async handleProcessExport(job: Job<{ jobId: string }>) {
     const exportJob = await this.prisma.exportJob.findUnique({
       where: { id: job.data.jobId },
-      include: { study: { include: { clinic: true } }, destination: true },
+      include: {
+        study: { include: { clinic: { include: { tenant: { select: { features: true } } } } } },
+        destination: true,
+      },
     });
 
     if (!exportJob) {
@@ -54,9 +55,8 @@ export class ExportProcessor {
       exportJob.destination.config as Record<string, unknown>,
     );
 
-    const anonymize =
-      this.configService.get<boolean>('app.featureAnonymization', false) &&
-      exportJob.study.clinic.anonymizeOnExport;
+    const tenantFeatures = exportJob.study.clinic.tenant.features as Record<string, boolean>;
+    const anonymize = !!tenantFeatures.dicomAnonymization && exportJob.study.clinic.anonymizeOnExport;
 
     const payload: ExportCommandPayload = {
       jobId: exportJob.id,
