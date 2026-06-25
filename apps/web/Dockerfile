@@ -21,6 +21,12 @@ CMD ["npm", "run", "dev"]
 # ─── Builder ──────────────────────────────────────────────────
 FROM base AS builder
 ENV NODE_ENV=production
+# NEXT_PUBLIC_* vars are inlined into the client bundle at build time,
+# so they must arrive as build ARGs, not just container-runtime env vars.
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_APP_URL
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
 COPY package.json turbo.json ./
 COPY packages/types/package.json ./packages/types/
 COPY apps/web/package.json ./apps/web/
