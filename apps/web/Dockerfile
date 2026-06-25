@@ -6,10 +6,10 @@ WORKDIR /app
 # ─── Development ──────────────────────────────────────────────
 FROM base AS development
 ENV NODE_ENV=development
-COPY package.json turbo.json ./
+COPY package.json package-lock.json turbo.json tsconfig.json ./
 COPY packages/types/package.json ./packages/types/
 COPY apps/web/package.json ./apps/web/
-RUN npm install --workspace=packages/types --workspace=apps/web
+RUN npm install --workspace=packages/types --workspace=apps/web --ignore-scripts
 COPY packages/types ./packages/types
 COPY apps/web ./apps/web
 WORKDIR /app/packages/types
@@ -27,10 +27,10 @@ ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 ENV NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
-COPY package.json turbo.json ./
+COPY package.json package-lock.json turbo.json tsconfig.json ./
 COPY packages/types/package.json ./packages/types/
 COPY apps/web/package.json ./apps/web/
-RUN npm ci --workspace=packages/types --workspace=apps/web
+RUN npm ci --workspace=packages/types --workspace=apps/web --ignore-scripts
 COPY packages/types ./packages/types
 COPY apps/web ./apps/web
 WORKDIR /app/packages/types
