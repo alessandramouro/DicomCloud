@@ -1,22 +1,23 @@
 'use client';
 
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import type { EdgeAgent, PaginatedResponse } from '@dicomcloud/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Server, Wifi, WifiOff, RefreshCw, Clock, Cpu, MemoryStick,
   HardDrive, Plus, Copy, Check, Trash2, AlertTriangle, Loader2, Key, Ticket,
 } from 'lucide-react';
-import { api } from '@/lib/api';
-import { cn, statusColors, timeAgo } from '@/lib/utils';
-import type { EdgeAgent, PaginatedResponse } from '@dicomcloud/types';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
 import {
   Dialog, DialogContent, DialogHeader, DialogBody, DialogFooter,
   DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
 import { usePermission } from '@/hooks/use-permission';
+import { api } from '@/lib/api';
+import { cn, statusColors, timeAgo } from '@/lib/utils';
 
 interface Clinic { id: string; name: string }
 

@@ -1,7 +1,9 @@
+import * as path from 'path';
+
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import * as path from 'path';
 import * as fs from 'fs-extra';
+
 import type { UploadConnector } from '../sync-engine.service';
 
 /**

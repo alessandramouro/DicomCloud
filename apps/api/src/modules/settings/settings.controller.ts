@@ -1,14 +1,16 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
+import { JwtPayload } from '@dicomcloud/types';
 import {
   Controller, Get, Patch, Body, ForbiddenException, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { IsString, IsOptional } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional } from 'class-validator';
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AuditService } from '../audit/audit.service';
-import { JwtPayload } from '@dicomcloud/types';
-import * as fs from 'fs';
-import * as path from 'path';
 
 class UpdateEnvDto {
   @ApiPropertyOptional() @IsOptional() @IsString() GOOGLE_CLIENT_ID?: string;

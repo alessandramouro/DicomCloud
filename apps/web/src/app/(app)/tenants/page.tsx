@@ -1,23 +1,25 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import type { PaginatedResponse } from '@dicomcloud/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Building, Search, Plus, RefreshCw, ChevronLeft, ChevronRight,
   Loader2, Users, Layers,
 } from 'lucide-react';
-import { api } from '@/lib/api';
-import { cn, timeAgo } from '@/lib/utils';
-import type { PaginatedResponse } from '@dicomcloud/types';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
 import {
   Dialog, DialogContent, DialogHeader, DialogBody, DialogFooter,
   DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
 import { usePermission } from '@/hooks/use-permission';
+import { api } from '@/lib/api';
+import { cn, timeAgo } from '@/lib/utils';
+
 
 interface Tenant {
   id: string;
@@ -72,12 +74,10 @@ type CreateForm = z.infer<typeof createSchema>;
 
 function CreateTenantModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const queryClient = useQueryClient();
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm<CreateForm>({
+  const { register, handleSubmit, reset, setValue, formState: { errors } } = useForm<CreateForm>({
     resolver: zodResolver(createSchema),
     defaultValues: { plan: 'STARTER' },
   });
-
-  const name = watch('name');
 
   // Auto-generate slug from name
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -1,6 +1,6 @@
-import { IsOptional, IsString, IsUUID, IsEnum, IsDateString, IsArray } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type, Transform } from 'class-transformer';
+import { IsOptional, IsString, IsUUID, IsEnum, IsDateString } from 'class-validator';
 
 export class StudyQueryDto {
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) page?: number;

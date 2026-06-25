@@ -1,14 +1,15 @@
+import * as path from 'path';
+
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import * as net from 'net';
-import * as path from 'path';
 import * as fs from 'fs-extra';
 import { v4 as uuidv4 } from 'uuid';
-import { DicomParserService } from './dicom-parser.service';
-import { QueueService } from '../queue/queue.service';
+
 import { DatabaseService } from '../../database/database.service';
-import { logger } from '../../common/logger';
+import { QueueService } from '../queue/queue.service';
+
+import { DicomParserService } from './dicom-parser.service';
 
 /**
  * DICOM C-STORE SCP (Storage Service Class Provider)

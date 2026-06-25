@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
 import { AuditAction, Prisma } from '@prisma/client';
+
+import { PrismaService } from '../../prisma/prisma.service';
 
 /** Used when no real tenant is resolvable (e.g. LOGIN_FAILED for an unknown/wrong-password attempt). Seeded by migration 20260624193425. */
 const SYSTEM_TENANT_ID = '00000000-0000-0000-0000-000000000001';

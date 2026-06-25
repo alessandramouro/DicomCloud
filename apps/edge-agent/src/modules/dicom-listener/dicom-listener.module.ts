@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
+
+import { QueueModule } from '../queue/queue.module';
+
+import { DicomFileWatcherService } from './dicom-file-watcher.service';
 import { DicomListenerService } from './dicom-listener.service';
 import { DicomParserService } from './dicom-parser.service';
-import { DicomFileWatcherService } from './dicom-file-watcher.service';
-import { QueueModule } from '../queue/queue.module';
 
 @Module({
   imports: [QueueModule],

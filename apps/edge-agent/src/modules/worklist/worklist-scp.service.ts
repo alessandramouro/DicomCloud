@@ -1,7 +1,8 @@
+import * as path from 'path';
+
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs-extra';
-import * as path from 'path';
 
 /**
  * Supervises dcmtk's wlmscpfs — a real, spec-compliant DICOM Basic Worklist

@@ -1,10 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import pLimit from 'p-limit';
-import { QueueService, QueueItem } from '../queue/queue.service';
+
 import { DatabaseService } from '../../database/database.service';
+import { QueueService, QueueItem } from '../queue/queue.service';
+
 import { GoogleDriveConnector } from './connectors/google-drive.connector';
 import { OneDriveConnector } from './connectors/onedrive.connector';
 import { SmbConnector } from './connectors/smb.connector';

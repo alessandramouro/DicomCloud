@@ -1,14 +1,18 @@
+import { JwtPayload } from '@dicomcloud/types';
 import {
   Controller, Get, Delete, Query, Param,
   ParseUUIDPipe, Res, HttpCode, HttpStatus, ForbiddenException,
 } from '@nestjs/common';
-import { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { OAuthService } from './oauth.service';
+import { Response } from 'express';
+
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public, RequirePermissions } from '../../common/decorators/roles.decorator';
-import { JwtPayload } from '@dicomcloud/types';
-import { ConfigService } from '@nestjs/config';
+
+import { OAuthService } from './oauth.service';
+
 
 const ADMIN_ROLES = ['SUPER_ADMIN', 'TENANT_ADMIN', 'CLINIC_ADMIN'];
 

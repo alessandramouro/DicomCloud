@@ -1,7 +1,8 @@
+import { ExportProgressEvent, ExportResultEvent } from '@dicomcloud/types';
 import { Injectable } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
+
 import { ExportService } from './export.service';
-import { ExportProgressEvent, ExportResultEvent } from '@dicomcloud/types';
 
 /**
  * Persists progress/result events reported by edge agents through ExportGateway.

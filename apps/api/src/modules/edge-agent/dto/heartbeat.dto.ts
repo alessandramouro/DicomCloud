@@ -1,5 +1,5 @@
-import { IsString, IsOptional, IsObject, IsEnum } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsOptional, IsObject, IsEnum } from 'class-validator';
 
 export class HeartbeatDto {
   @ApiProperty({ enum: ['ONLINE','OFFLINE','DEGRADED','MAINTENANCE'] })

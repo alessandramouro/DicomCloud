@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { EdgeAgentController } from './edge-agent.controller';
-import { EdgeAgentService } from './edge-agent.service';
+
 import { AuditModule } from '../audit/audit.module';
 import { StudyModule } from '../study/study.module';
+
+import { EdgeAgentController } from './edge-agent.controller';
+import { EdgeAgentService } from './edge-agent.service';
 
 @Module({
   imports: [AuditModule, StudyModule],

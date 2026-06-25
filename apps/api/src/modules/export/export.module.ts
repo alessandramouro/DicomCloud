@@ -1,12 +1,14 @@
-import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bull';
-import { ExportService } from './export.service';
-import { ExportController } from './export.controller';
-import { ExportProcessor } from './export.processor';
-import { ExportEventListener } from './export-event.listener';
+import { Module } from '@nestjs/common';
+
 import { PrismaModule } from '../../prisma/prisma.module';
 import { AuditModule } from '../audit/audit.module';
 import { RealtimeModule } from '../realtime/realtime.module';
+
+import { ExportEventListener } from './export-event.listener';
+import { ExportController } from './export.controller';
+import { ExportProcessor } from './export.processor';
+import { ExportService } from './export.service';
 
 @Module({
   imports: [

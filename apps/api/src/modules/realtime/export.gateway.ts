@@ -1,7 +1,8 @@
+import type { JwtPayload, ExportCommandPayload, ExportProgressEvent, ExportResultEvent } from '@dicomcloud/types';
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { JwtService } from '@nestjs/jwt';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -12,11 +13,11 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import type { JwtPayload, ExportCommandPayload, ExportProgressEvent, ExportResultEvent } from '@dicomcloud/types';
+
 import { Public } from '../../common/decorators/roles.decorator';
+import { edgeAgentsConnected } from '../../common/metrics/app-metrics';
 import { PrismaService } from '../../prisma/prisma.service';
 import { EdgeAgentService } from '../edge-agent/edge-agent.service';
-import { edgeAgentsConnected } from '../../common/metrics/app-metrics';
 
 /**
  * Single gateway serving two kinds of clients on the same /realtime namespace:

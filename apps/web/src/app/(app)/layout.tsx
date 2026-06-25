@@ -1,11 +1,12 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth.store';
+import { useEffect } from 'react';
+
 import { Sidebar } from '@/components/layout/sidebar';
 import { TopBar } from '@/components/layout/topbar';
 import { connectSocket, disconnectSocket } from '@/lib/socket';
+import { useAuthStore } from '@/stores/auth.store';
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuthStore();

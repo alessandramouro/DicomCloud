@@ -1,8 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createTestApp } from './utils/test-app';
+
 import { resetDatabase, prisma } from './utils/db';
 import { createTenant, createClinic, createUser, createStorageDestination } from './utils/fixtures';
+import { createTestApp } from './utils/test-app';
 
 describe('Export jobs (e2e)', () => {
   let app: INestApplication;

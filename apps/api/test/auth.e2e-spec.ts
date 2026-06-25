@@ -1,8 +1,9 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createTestApp } from './utils/test-app';
+
 import { resetDatabase, prisma } from './utils/db';
 import { createTenant, createClinic, createUser } from './utils/fixtures';
+import { createTestApp } from './utils/test-app';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;

@@ -1,7 +1,8 @@
 'use client';
 
-import { useAuthStore } from '@/stores/auth.store';
 import type { Permission, UserRole } from '@dicomcloud/types';
+
+import { useAuthStore } from '@/stores/auth.store';
 
 export function usePermission() {
   const user = useAuthStore((s) => s.user);

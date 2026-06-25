@@ -1,29 +1,28 @@
 import {
-  Injectable,
-  UnauthorizedException,
-  ForbiddenException,
-  BadRequestException,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import * as argon2 from 'argon2';
-import { authenticator } from 'otplib';
-import * as qrcode from 'qrcode';
-import { v4 as uuidv4 } from 'uuid';
-import { User, UserStatus } from '@prisma/client';
-
-import { PrismaService } from '../../prisma/prisma.service';
-import { AuditService } from '../audit/audit.service';
-import {
   LoginRequest,
   LoginResponse,
   JwtPayload,
   MfaSetupResponse,
   AuthUser,
 } from '@dicomcloud/types';
+import {
+  Injectable,
+  UnauthorizedException,
+  ForbiddenException,
+  BadRequestException,
+  Logger,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { JwtService } from '@nestjs/jwt';
+import { User, UserStatus } from '@prisma/client';
+import * as argon2 from 'argon2';
+import { authenticator } from 'otplib';
+import * as qrcode from 'qrcode';
+import { v4 as uuidv4 } from 'uuid';
+
+import { PrismaService } from '../../prisma/prisma.service';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class AuthService {
@@ -186,9 +185,8 @@ export class AuthService {
   }
 
   async refreshTokens(refreshToken: string): Promise<LoginResponse> {
-    let payload: JwtPayload;
     try {
-      payload = this.jwtService.verify<JwtPayload>(refreshToken, {
+      this.jwtService.verify<JwtPayload>(refreshToken, {
         secret: this.configService.get<string>('auth.jwtRefreshSecret'),
       });
     } catch {

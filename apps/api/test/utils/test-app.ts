@@ -1,10 +1,11 @@
-import { Test } from '@nestjs/testing';
 import { ValidationPipe, INestApplication, VersioningType } from '@nestjs/common';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { Test } from '@nestjs/testing';
+
 import { AppModule } from '../../src/app.module';
 import { HttpExceptionFilter } from '../../src/common/filters/http-exception.filter';
-import { TransformInterceptor } from '../../src/common/interceptors/transform.interceptor';
 import { LoggingInterceptor } from '../../src/common/interceptors/logging.interceptor';
+import { TransformInterceptor } from '../../src/common/interceptors/transform.interceptor';
 
 /** Bootstraps the real AppModule with the same global pipes/filters/interceptors as main.ts (minus Swagger/static assets, which E2E specs don't need). */
 export async function createTestApp(): Promise<INestApplication> {

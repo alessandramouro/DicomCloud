@@ -1,6 +1,6 @@
+import type { AuthUser } from '@dicomcloud/types';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { AuthUser } from '@dicomcloud/types';
 
 interface AuthState {
   user: AuthUser | null;

@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
-import { AgentStateService } from './agent-state.service';
+
 import { CloudApiModule } from '../cloud-api/cloud-api.module';
+
+import { AgentStateService } from './agent-state.service';
 
 @Module({
   imports: [CloudApiModule],

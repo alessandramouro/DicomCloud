@@ -1,10 +1,12 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { JwtPayload } from '@dicomcloud/types';
+import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { PrismaService } from '../../prisma/prisma.service';
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../common/decorators/roles.decorator';
-import { JwtPayload } from '@dicomcloud/types';
 import { parsePagination, buildPaginatedResponse } from '../../common/utils/pagination.util';
+import { PrismaService } from '../../prisma/prisma.service';
+
 import { AuditQueryDto } from './dto/audit-query.dto';
 
 @ApiTags('audit')

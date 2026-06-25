@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import * as chokidar from 'chokidar';
-import * as path from 'path';
+
 import { DicomListenerService } from './dicom-listener.service';
 
 /**

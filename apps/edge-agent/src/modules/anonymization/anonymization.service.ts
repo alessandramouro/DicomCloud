@@ -1,10 +1,13 @@
+import { spawn } from 'child_process';
+import { randomBytes, createHash } from 'crypto';
+import * as path from 'path';
+
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { randomBytes, createHash } from 'crypto';
-import { spawn } from 'child_process';
-import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs-extra';
-import * as path from 'path';
+import { v4 as uuidv4 } from 'uuid';
+
+
 import { AgentStateService } from '../state/agent-state.service';
 
 const SALT_STATE_KEY = 'anonymization_salt';

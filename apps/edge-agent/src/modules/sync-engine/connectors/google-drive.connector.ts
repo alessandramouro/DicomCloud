@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { google, drive_v3 } from 'googleapis';
 import * as fs from 'fs-extra';
-import * as path from 'path';
+import { google, drive_v3 } from 'googleapis';
 import * as mime from 'mime-types';
+
 import type { UploadConnector } from '../sync-engine.service';
 
 /**

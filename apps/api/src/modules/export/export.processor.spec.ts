@@ -1,8 +1,10 @@
 import { Test } from '@nestjs/testing';
+
+import { PrismaService } from '../../prisma/prisma.service';
+import { ExportGateway } from '../realtime/export.gateway';
+
 import { ExportProcessor } from './export.processor';
 import { ExportService } from './export.service';
-import { ExportGateway } from '../realtime/export.gateway';
-import { PrismaService } from '../../prisma/prisma.service';
 
 describe('ExportProcessor', () => {
   let processor: ExportProcessor;

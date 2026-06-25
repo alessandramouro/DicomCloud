@@ -1,14 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import type { LoginResponse } from '@dicomcloud/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Eye, EyeOff, Loader2, Activity } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
-import type { LoginResponse } from '@dicomcloud/types';
+
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),

@@ -1,4 +1,5 @@
 import { registerAs } from '@nestjs/config';
+
 import { readCredentials } from '../common/credentials-store';
 
 const stored = readCredentials();

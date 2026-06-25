@@ -1,16 +1,18 @@
+import { JwtPayload } from '@dicomcloud/types';
 import {
   Controller, Get, Post, Put, Delete,
   Body, Param, Query, HttpCode, HttpStatus, ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { ClinicService } from './clinic.service';
-import { CreateClinicDto } from './dto/create-clinic.dto';
-import { UpdateClinicDto } from './dto/update-clinic.dto';
-import { ClinicQueryDto } from './dto/clinic-query.dto';
-import { UpsertStorageDestinationDto } from './dto/upsert-storage-destination.dto';
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../common/decorators/roles.decorator';
-import { JwtPayload } from '@dicomcloud/types';
+
+import { ClinicService } from './clinic.service';
+import { ClinicQueryDto } from './dto/clinic-query.dto';
+import { CreateClinicDto } from './dto/create-clinic.dto';
+import { UpdateClinicDto } from './dto/update-clinic.dto';
+import { UpsertStorageDestinationDto } from './dto/upsert-storage-destination.dto';
 
 @ApiTags('clinics')
 @ApiBearerAuth('JWT-auth')

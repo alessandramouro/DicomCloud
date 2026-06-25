@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
-import { TelemetryService } from './telemetry.service';
+
 import { CloudApiModule } from '../cloud-api/cloud-api.module';
+
+import { TelemetryService } from './telemetry.service';
 
 @Module({
   imports: [CloudApiModule],

@@ -1,6 +1,6 @@
-import { IsOptional, IsString, IsUUID, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { IsOptional, IsString, IsUUID, IsEnum } from 'class-validator';
 
 export class ClinicQueryDto {
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) page?: number;

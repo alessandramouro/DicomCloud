@@ -1,15 +1,16 @@
+import * as fs from 'fs';
+import * as path from 'path';
+
 import {
   Controller, Post, UseInterceptors, UploadedFile,
   BadRequestException, HttpCode, HttpStatus,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiConsumes } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
-import { RequirePermissions } from '../../common/decorators/roles.decorator';
-import * as multer from 'multer';
-import * as path from 'path';
-import * as fs from 'fs';
 import { v4 as uuidv4 } from 'uuid';
+
+import { RequirePermissions } from '../../common/decorators/roles.decorator';
 
 @ApiTags('uploads')
 @ApiBearerAuth('JWT-auth')

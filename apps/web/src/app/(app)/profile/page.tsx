@@ -1,12 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import type { MfaSetupResponse } from '@dicomcloud/types';
 import { useMutation } from '@tanstack/react-query';
 import { ShieldCheck, ShieldOff, Loader2, KeyRound, Copy, Check } from 'lucide-react';
-import { api } from '@/lib/api';
+import { useState } from 'react';
+
 import { toast } from '@/components/ui/use-toast';
+import { api } from '@/lib/api';
 import { useAuthStore } from '@/stores/auth.store';
-import type { MfaSetupResponse } from '@dicomcloud/types';
+
 
 const roleLabels: Record<string, string> = {
   SUPER_ADMIN: 'Super Admin',

@@ -1,11 +1,13 @@
+import { JwtPayload } from '@dicomcloud/types';
 import { Controller, Get, Post, Patch, Delete, Param, Body, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
-import { WebhookService } from './webhook.service';
-import { CreateWebhookConfigDto } from './dto/create-webhook-config.dto';
-import { UpdateWebhookConfigDto } from './dto/update-webhook-config.dto';
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../common/decorators/roles.decorator';
-import { JwtPayload } from '@dicomcloud/types';
+
+import { CreateWebhookConfigDto } from './dto/create-webhook-config.dto';
+import { UpdateWebhookConfigDto } from './dto/update-webhook-config.dto';
+import { WebhookService } from './webhook.service';
 
 /**
  * Permission reuse note: there's no dedicated `webhooks:*` permission in the shared

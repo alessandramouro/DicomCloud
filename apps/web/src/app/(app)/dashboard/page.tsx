@@ -1,17 +1,18 @@
 'use client';
 
+import { StudyStats, EdgeAgent } from '@dicomcloud/types';
 import { useQuery } from '@tanstack/react-query';
 import {
-  Image, Activity, CheckCircle, AlertCircle,
+  Image, Activity, CheckCircle,
   TrendingUp, HardDrive, Server, Clock,
 } from 'lucide-react';
-import { api } from '@/lib/api';
-import { formatBytes, formatNumber, timeAgo, statusColors, cn } from '@/lib/utils';
-import { StudyStats, EdgeAgent } from '@dicomcloud/types';
 import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Cell,
 } from 'recharts';
+
+import { api } from '@/lib/api';
+import { formatBytes, formatNumber, timeAgo, statusColors, cn } from '@/lib/utils';
 
 function StatCard({
   title, value, subtitle, icon: Icon, trend, color = 'text-foreground',

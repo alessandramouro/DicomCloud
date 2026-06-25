@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Patch, Delete, Body, Param, Query, ParseUUIDPipe } from '@nestjs/common';
+import { JwtPayload } from '@dicomcloud/types';
+import { Controller, Get, Param, Query, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { StudyService } from './study.service';
-import { StudyQueryDto } from './dto/study-query.dto';
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { RequirePermissions } from '../../common/decorators/roles.decorator';
-import { JwtPayload } from '@dicomcloud/types';
+
+import { StudyQueryDto } from './dto/study-query.dto';
+import { StudyService } from './study.service';
 
 @ApiTags('studies')
 @ApiBearerAuth('JWT-auth')

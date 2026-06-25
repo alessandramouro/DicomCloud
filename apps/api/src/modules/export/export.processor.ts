@@ -1,10 +1,12 @@
-import { Processor, Process } from '@nestjs/bull';
-import { Job } from 'bull';
-import { Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { ExportService } from './export.service';
-import { ExportGateway } from '../realtime/export.gateway';
 import { StorageDestinationType, ExportCommandPayload } from '@dicomcloud/types';
+import { Processor, Process } from '@nestjs/bull';
+import { Logger } from '@nestjs/common';
+import { Job } from 'bull';
+
+import { PrismaService } from '../../prisma/prisma.service';
+import { ExportGateway } from '../realtime/export.gateway';
+
+import { ExportService } from './export.service';
 
 const UNSUPPORTED_DESTINATIONS: StorageDestinationType[] = ['NFS', 'S3', 'LOCAL'];
 

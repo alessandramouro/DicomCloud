@@ -1,24 +1,26 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import type { PaginatedResponse } from '@dicomcloud/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Building2, ArrowLeft, RefreshCw, Plus, Server,
   Users, Layers, CheckCircle, XCircle, Loader2, Pencil, Settings,
   MapPin, Mail, Save,
 } from 'lucide-react';
-import { api } from '@/lib/api';
-import { cn, timeAgo, formatDateTime } from '@/lib/utils';
-import type { PaginatedResponse } from '@dicomcloud/types';
+import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
 import {
   Dialog, DialogContent, DialogHeader, DialogBody, DialogFooter,
   DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
 import { usePermission } from '@/hooks/use-permission';
+import { api } from '@/lib/api';
+import { cn, timeAgo, formatDateTime } from '@/lib/utils';
+
 
 // ─── Types ──────────────────────────────────────────────────
 

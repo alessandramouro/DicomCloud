@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
-import { AnonymizationService } from './anonymization.service';
+
 import { AgentStateModule } from '../state/agent-state.module';
+
+import { AnonymizationService } from './anonymization.service';
 
 @Module({
   imports: [AgentStateModule],

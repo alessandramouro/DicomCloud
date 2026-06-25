@@ -1,16 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
-import * as fs from 'fs-extra';
-import { DatabaseService } from '../../database/database.service';
-import { GoogleDriveConnector } from '../sync-engine/connectors/google-drive.connector';
-import { OneDriveConnector } from '../sync-engine/connectors/onedrive.connector';
-import { SmbConnector } from '../sync-engine/connectors/smb.connector';
-import type { UploadConnector } from '../sync-engine/sync-engine.service';
-import { AnonymizationService } from '../anonymization/anonymization.service';
 import type {
   ExportCommandPayload,
   ExportProgressEvent,
   ExportResultEvent,
 } from '@dicomcloud/types';
+import { Injectable, Logger } from '@nestjs/common';
+import * as fs from 'fs-extra';
+
+import { DatabaseService } from '../../database/database.service';
+import { AnonymizationService } from '../anonymization/anonymization.service';
+import { GoogleDriveConnector } from '../sync-engine/connectors/google-drive.connector';
+import { OneDriveConnector } from '../sync-engine/connectors/onedrive.connector';
+import { SmbConnector } from '../sync-engine/connectors/smb.connector';
+import type { UploadConnector } from '../sync-engine/sync-engine.service';
 
 interface LocalStudyRow {
   id: string;

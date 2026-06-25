@@ -1,7 +1,8 @@
+import type { DicomMetadata } from '@dicomcloud/types';
 import { Injectable, Logger } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
+
 import { DatabaseService } from '../../database/database.service';
-import type { DicomMetadata } from '@dicomcloud/types';
 
 export interface QueueEnqueueOptions {
   studyId: string;

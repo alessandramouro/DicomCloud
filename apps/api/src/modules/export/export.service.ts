@@ -1,14 +1,17 @@
-import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { JwtPayload, ExportProgressEvent, StorageDestinationType } from '@dicomcloud/types';
 import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import { Injectable, Logger, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import { Queue } from 'bull';
+
+import { exportJobsTotal } from '../../common/metrics/app-metrics';
+import { EncryptionUtil, SENSITIVE_CONFIG_FIELDS } from '../../common/utils/encryption.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { EncryptionUtil, SENSITIVE_CONFIG_FIELDS } from '../../common/utils/encryption.util';
 import { ExportGateway } from '../realtime/export.gateway';
-import { JwtPayload, ExportProgressEvent, StorageDestinationType } from '@dicomcloud/types';
-import { exportJobsTotal } from '../../common/metrics/app-metrics';
+
+
 
 @Injectable()
 export class ExportService {
@@ -129,7 +132,7 @@ export class ExportService {
   }
 
   async retryExportJob(id: string, currentUser: JwtPayload) {
-    const job = await this.getExportJob(id, currentUser);
+    await this.getExportJob(id, currentUser); // throws if not found / not owned by this tenant
 
     await this.prisma.exportJob.update({
       where: { id },

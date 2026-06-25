@@ -1,7 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import { PrismaService } from '../../prisma/prisma.service';
+
 import { Public } from '../../common/decorators/roles.decorator';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @ApiTags('health')
 @Controller('health')

@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import * as fs from 'fs-extra';
+
 import type { UploadConnector } from '../sync-engine.service';
 
 const GRAPH_BASE = 'https://graph.microsoft.com/v1.0';

@@ -1,5 +1,5 @@
-import { IsString, Length } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { IsString, Length } from 'class-validator';
 
 export class EnableMfaDto {
   @ApiProperty({ description: 'TOTP 6-digit code from authenticator app', example: '123456' })

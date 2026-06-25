@@ -3,23 +3,24 @@ import './tracing'; // OpenTelemetry — must be first import
 // Prisma returns BigInt for some fields — patch global JSON serialization
 (BigInt.prototype as any).toJSON = function () { return Number(this); };
 
-import { NestFactory } from '@nestjs/core';
+import * as fs from 'fs';
+import * as path from 'path';
+
 import { ValidationPipe, VersioningType } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import compression from 'compression';
-import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
-import * as path from 'path';
-import * as fs from 'fs';
+import helmet from 'helmet';
 
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
-import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { logger } from './common/logger/winston.logger';
+import { RequestIdMiddleware } from './common/middleware/request-id.middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {

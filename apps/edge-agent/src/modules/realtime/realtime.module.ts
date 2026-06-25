@@ -1,8 +1,10 @@
 import { Module } from '@nestjs/common';
-import { RealtimeClientService } from './realtime-client.service';
-import { ExportHandlerService } from './export-handler.service';
-import { SyncEngineModule } from '../sync-engine/sync-engine.module';
+
 import { AnonymizationModule } from '../anonymization/anonymization.module';
+import { SyncEngineModule } from '../sync-engine/sync-engine.module';
+
+import { ExportHandlerService } from './export-handler.service';
+import { RealtimeClientService } from './realtime-client.service';
 
 @Module({
   imports: [SyncEngineModule, AnonymizationModule],

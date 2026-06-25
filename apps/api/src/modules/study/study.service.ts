@@ -1,15 +1,19 @@
+import { createHash } from 'crypto';
+
+import { JwtPayload } from '@dicomcloud/types';
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { StudyStatus } from '@prisma/client';
 
+import { studiesIngestedTotal } from '../../common/metrics/app-metrics';
+import { parsePagination, buildPaginatedResponse, buildOrderBy } from '../../common/utils/pagination.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { JwtPayload } from '@dicomcloud/types';
-import { StudyQueryDto } from './dto/study-query.dto';
+
 import { IngestStudyDto } from './dto/ingest-study.dto';
-import { parsePagination, buildPaginatedResponse, buildOrderBy } from '../../common/utils/pagination.util';
-import { studiesIngestedTotal } from '../../common/metrics/app-metrics';
-import { createHash } from 'crypto';
+import { StudyQueryDto } from './dto/study-query.dto';
+
+
 
 @Injectable()
 export class StudyService {
@@ -185,7 +189,6 @@ export class StudyService {
     // SUPER_ADMIN sees aggregate across all tenants; others are scoped to their tenant
     const tenantFilter = currentUser.role === 'SUPER_ADMIN' ? {} : { tenantId: currentUser.tenantId };
     const clinicFilter = currentUser.clinicId ? { clinicId: currentUser.clinicId } : {};
-    const tenantId = currentUser.tenantId; // kept for backwards compat below
 
     const now = new Date();
     const startOfDay = new Date(now.setHours(0, 0, 0, 0));

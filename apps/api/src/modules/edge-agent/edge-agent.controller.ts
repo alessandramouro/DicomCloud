@@ -1,19 +1,21 @@
+import { JwtPayload } from '@dicomcloud/types';
 import {
   Controller, Get, Post, Delete,
   Body, Param, Query, Headers, ParseUUIDPipe, HttpCode, HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiSecurity, ApiOperation } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { EdgeAgentService } from './edge-agent.service';
-import { RegisterAgentDto } from './dto/register-agent.dto';
-import { HeartbeatDto } from './dto/heartbeat.dto';
-import { EnrollAgentDto } from './dto/enroll-agent.dto';
-import { CreateEnrollmentTokenDto } from './dto/create-enrollment-token.dto';
-import { AgentQueryDto } from './dto/agent-query.dto';
+
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { RequirePermissions, Public, AgentEndpoint } from '../../common/decorators/roles.decorator';
-import { JwtPayload } from '@dicomcloud/types';
+import { RequirePermissions, Public } from '../../common/decorators/roles.decorator';
 import { IngestStudyDto } from '../study/dto/ingest-study.dto';
+
+import { AgentQueryDto } from './dto/agent-query.dto';
+import { CreateEnrollmentTokenDto } from './dto/create-enrollment-token.dto';
+import { EnrollAgentDto } from './dto/enroll-agent.dto';
+import { HeartbeatDto } from './dto/heartbeat.dto';
+import { RegisterAgentDto } from './dto/register-agent.dto';
+import { EdgeAgentService } from './edge-agent.service';
 
 @ApiTags('agents')
 @Controller({ path: 'agents', version: '1' })

@@ -1,5 +1,5 @@
-import { IsString, IsUUID, IsObject, IsOptional } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsString, IsUUID, IsObject, IsOptional } from 'class-validator';
 
 export class RegisterAgentDto {
   @ApiProperty() @IsUUID() clinicId: string;

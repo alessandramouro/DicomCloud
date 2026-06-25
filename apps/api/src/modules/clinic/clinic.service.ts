@@ -1,3 +1,4 @@
+import { JwtPayload } from '@dicomcloud/types';
 import {
   Injectable,
   NotFoundException,
@@ -6,15 +7,16 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
+import { EncryptionUtil, SENSITIVE_CONFIG_FIELDS } from '../../common/utils/encryption.util';
+import { parsePagination, buildPaginatedResponse, buildOrderBy } from '../../common/utils/pagination.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { EncryptionUtil, SENSITIVE_CONFIG_FIELDS } from '../../common/utils/encryption.util';
-import { JwtPayload } from '@dicomcloud/types';
+
+import { ClinicQueryDto } from './dto/clinic-query.dto';
 import { CreateClinicDto } from './dto/create-clinic.dto';
 import { UpdateClinicDto } from './dto/update-clinic.dto';
-import { ClinicQueryDto } from './dto/clinic-query.dto';
 import { UpsertStorageDestinationDto } from './dto/upsert-storage-destination.dto';
-import { parsePagination, buildPaginatedResponse, buildOrderBy } from '../../common/utils/pagination.util';
+
 
 @Injectable()
 export class ClinicService {

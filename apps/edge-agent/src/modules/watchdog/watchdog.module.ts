@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
-import { WatchdogService } from './watchdog.service';
-import { SyncEngineModule } from '../sync-engine/sync-engine.module';
+
 import { CloudApiModule } from '../cloud-api/cloud-api.module';
+import { SyncEngineModule } from '../sync-engine/sync-engine.module';
+
+import { WatchdogService } from './watchdog.service';
 
 @Module({
   imports: [SyncEngineModule, CloudApiModule],

@@ -2,6 +2,7 @@ import { Controller, Get, Res } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { Response } from 'express';
 import * as client from 'prom-client';
+
 import { Public } from '../../common/decorators/roles.decorator';
 
 // Register default metrics

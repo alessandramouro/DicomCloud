@@ -1,20 +1,22 @@
+import { randomInt } from 'crypto';
+
+import { JwtPayload } from '@dicomcloud/types';
 import {
   Injectable,
   NotFoundException,
   ConflictException,
   ForbiddenException,
 } from '@nestjs/common';
-import * as argon2 from 'argon2';
-import { randomInt } from 'crypto';
 import { UserStatus } from '@prisma/client';
+import * as argon2 from 'argon2';
 
+import { parsePagination, buildPaginatedResponse, buildOrderBy } from '../../common/utils/pagination.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
+
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
-import { JwtPayload } from '@dicomcloud/types';
-import { parsePagination, buildPaginatedResponse, buildOrderBy } from '../../common/utils/pagination.util';
 
 const PASSWORD_CHARS = {
   upper: 'ABCDEFGHJKLMNPQRSTUVWXYZ',

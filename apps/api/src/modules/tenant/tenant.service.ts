@@ -1,9 +1,10 @@
+import { JwtPayload } from '@dicomcloud/types';
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import * as argon2 from 'argon2';
+
+import { parsePagination, buildPaginatedResponse } from '../../common/utils/pagination.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { JwtPayload } from '@dicomcloud/types';
-import { parsePagination, buildPaginatedResponse } from '../../common/utils/pagination.util';
 
 @Injectable()
 export class TenantService {
@@ -33,7 +34,7 @@ export class TenantService {
     return tenant;
   }
 
-  async create(dto: Record<string, unknown>, currentUser: JwtPayload) {
+  async create(dto: Record<string, unknown>, _currentUser: JwtPayload) {
     const passwordHash = await argon2.hash(dto.adminPassword as string, { type: argon2.argon2id });
 
     return this.prisma.$transaction(async (tx) => {

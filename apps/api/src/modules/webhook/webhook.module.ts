@@ -1,9 +1,12 @@
-import { Module } from '@nestjs/common';
-import { WebhookService } from './webhook.service';
-import { WebhookProcessor } from './webhook.processor';
-import { WebhookController } from './webhook.controller';
 import { BullModule } from '@nestjs/bull';
+import { Module } from '@nestjs/common';
+
 import { AuditModule } from '../audit/audit.module';
+
+import { WebhookController } from './webhook.controller';
+import { WebhookProcessor } from './webhook.processor';
+import { WebhookService } from './webhook.service';
+
 
 @Module({
   imports: [BullModule.registerQueue({ name: 'webhooks' }), AuditModule],

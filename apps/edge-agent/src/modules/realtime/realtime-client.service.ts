@@ -1,12 +1,13 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { io, Socket } from 'socket.io-client';
-import { ExportHandlerService } from './export-handler.service';
 import type {
   ExportCommandPayload,
   ExportProgressEvent,
   ExportResultEvent,
 } from '@dicomcloud/types';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { io, Socket } from 'socket.io-client';
+
+import { ExportHandlerService } from './export-handler.service';
 
 /**
  * Outbound-only connection to the cloud's /realtime gateway, mirroring the

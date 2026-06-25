@@ -1,10 +1,12 @@
-import { INestApplication } from '@nestjs/common';
-import * as http from 'http';
 import { createHmac } from 'crypto';
+import * as http from 'http';
+
+import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createTestApp } from './utils/test-app';
+
 import { resetDatabase, prisma } from './utils/db';
 import { createTenant, createClinic, createUser, createEdgeAgent } from './utils/fixtures';
+import { createTestApp } from './utils/test-app';
 
 describe('Webhooks (e2e)', () => {
   let app: INestApplication;

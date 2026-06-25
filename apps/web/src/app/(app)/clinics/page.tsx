@@ -1,21 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useForm } from 'react-hook-form';
+import type { Clinic, PaginatedResponse } from '@dicomcloud/types';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Building2, Search, Plus, RefreshCw, Server, ChevronLeft, ChevronRight, Loader2, Pencil, Upload, X,
 } from 'lucide-react';
-import { api } from '@/lib/api';
-import { cn, statusColors, timeAgo } from '@/lib/utils';
-import type { Clinic, PaginatedResponse } from '@dicomcloud/types';
+import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+
 import {
   Dialog, DialogContent, DialogHeader, DialogBody, DialogFooter,
   DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
 import { usePermission } from '@/hooks/use-permission';
+import { api } from '@/lib/api';
+import { cn, statusColors, timeAgo } from '@/lib/utils';
 
 const clinicSchema = z.object({
   name: z.string().min(2, 'Nome deve ter ao menos 2 caracteres').max(255),

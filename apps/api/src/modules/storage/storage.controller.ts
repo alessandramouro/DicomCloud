@@ -1,7 +1,9 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+
+import { RequirePermissions } from '../../common/decorators/roles.decorator';
+
 import { StorageService } from './storage.service';
-import { RequirePermissions, Public } from '../../common/decorators/roles.decorator';
 
 @ApiTags('storage')
 @ApiBearerAuth('JWT-auth')

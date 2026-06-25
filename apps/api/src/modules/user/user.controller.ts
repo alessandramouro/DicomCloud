@@ -1,16 +1,18 @@
+import { JwtPayload } from '@dicomcloud/types';
 import {
   Controller, Get, Post, Put, Delete,
   Body, Param, Query, HttpCode, HttpStatus, ParseUUIDPipe, NotFoundException,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { UserService } from './user.service';
+
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { RequirePermissions } from '../../common/decorators/roles.decorator';
 import { AuthService } from '../auth/auth.service';
+
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { RequirePermissions } from '../../common/decorators/roles.decorator';
-import { JwtPayload } from '@dicomcloud/types';
+import { UserService } from './user.service';
 
 @ApiTags('users')
 @ApiBearerAuth('JWT-auth')

@@ -1,7 +1,8 @@
+import { createHash } from 'crypto';
+
+import type { DicomMetadata } from '@dicomcloud/types';
 import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs-extra';
-import { createHash } from 'crypto';
-import type { DicomMetadata } from '@dicomcloud/types';
 
 /**
  * DicomParserService — extracts metadata from DICOM files.

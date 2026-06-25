@@ -1,38 +1,37 @@
+import { BullModule } from '@nestjs/bull';
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
-import { APP_GUARD } from '@nestjs/core';
-import { BullModule } from '@nestjs/bull';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 import appConfig from './config/app.config';
-import databaseConfig from './config/database.config';
 import authConfig from './config/auth.config';
-import redisConfig from './config/redis.config';
-import storageConfig from './config/storage.config';
+import { configValidationSchema } from './config/config.validation';
+import databaseConfig from './config/database.config';
 import emailConfig from './config/email.config';
 import oauthConfig from './config/oauth.config';
-import { configValidationSchema } from './config/config.validation';
-
-import { PrismaModule } from './prisma/prisma.module';
-import { AuthModule } from './modules/auth/auth.module';
-import { TenantModule } from './modules/tenant/tenant.module';
-import { ClinicModule } from './modules/clinic/clinic.module';
-import { UserModule } from './modules/user/user.module';
-import { StudyModule } from './modules/study/study.module';
-import { ExportModule } from './modules/export/export.module';
-import { NotificationModule } from './modules/notification/notification.module';
-import { EdgeAgentModule } from './modules/edge-agent/edge-agent.module';
-import { StorageModule } from './modules/storage/storage.module';
+import redisConfig from './config/redis.config';
+import storageConfig from './config/storage.config';
 import { AuditModule } from './modules/audit/audit.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { ClinicModule } from './modules/clinic/clinic.module';
+import { EdgeAgentModule } from './modules/edge-agent/edge-agent.module';
+import { ExportModule } from './modules/export/export.module';
 import { HealthModule } from './modules/health/health.module';
 import { MetricsModule } from './modules/metrics/metrics.module';
-import { WebhookModule } from './modules/webhook/webhook.module';
+import { NotificationModule } from './modules/notification/notification.module';
 import { OAuthModule } from './modules/oauth/oauth.module';
-import { UploadModule } from './modules/upload/upload.module';
-import { SettingsModule } from './modules/settings/settings.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { StorageModule } from './modules/storage/storage.module';
+import { StudyModule } from './modules/study/study.module';
+import { TenantModule } from './modules/tenant/tenant.module';
+import { UploadModule } from './modules/upload/upload.module';
+import { UserModule } from './modules/user/user.module';
+import { WebhookModule } from './modules/webhook/webhook.module';
+import { PrismaModule } from './prisma/prisma.module';
 
 @Module({
   imports: [

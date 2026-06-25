@@ -1,7 +1,7 @@
+import type { EdgeAgentHeartbeat } from '@dicomcloud/types';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosInstance } from 'axios';
-import type { EdgeAgentHeartbeat } from '@dicomcloud/types';
 
 /**
  * CloudApiService — communicates with DicomCloud backend.

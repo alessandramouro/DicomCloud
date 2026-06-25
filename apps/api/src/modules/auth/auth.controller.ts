@@ -1,10 +1,10 @@
+import { JwtPayload } from '@dicomcloud/types';
 import {
   Controller,
   Post,
   Get,
   Body,
   Request,
-  UseGuards,
   HttpCode,
   HttpStatus,
   Ip,
@@ -15,20 +15,19 @@ import {
   ApiOperation,
   ApiResponse,
   ApiBearerAuth,
-  ApiBody,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Request as ExpressRequest } from 'express';
 
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Public } from '../../common/decorators/roles.decorator';
+
 import { AuthService } from './auth.service';
+import { ConfirmPasswordResetDto } from './dto/confirm-password-reset.dto';
+import { EnableMfaDto } from './dto/enable-mfa.dto';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
-import { ConfirmPasswordResetDto } from './dto/confirm-password-reset.dto';
-import { EnableMfaDto } from './dto/enable-mfa.dto';
-import { Public } from '../../common/decorators/roles.decorator';
-import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { JwtPayload } from '@dicomcloud/types';
 
 @ApiTags('auth')
 @Controller({ path: 'auth', version: '1' })

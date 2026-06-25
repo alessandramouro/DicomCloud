@@ -1,16 +1,18 @@
 'use client';
 
+import type { Permission } from '@dicomcloud/types';
+import {
+  Activity, LayoutDashboard, Image, Users, Building,
+  Server, HardDrive, FileText, LogOut, ChevronLeft,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import {
-  Activity, LayoutDashboard, Image, Building2, Users, Building,
-  Server, HardDrive, FileText, Settings2, LogOut, ChevronLeft,
-} from 'lucide-react';
+import { useState } from 'react';
+
+import { usePermission } from '@/hooks/use-permission';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth.store';
-import { usePermission } from '@/hooks/use-permission';
-import { useState } from 'react';
-import type { Permission } from '@dicomcloud/types';
+
 
 interface NavItem {
   href: string;

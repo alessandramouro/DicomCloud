@@ -1,3 +1,6 @@
+import { randomBytes, createHash } from 'crypto';
+
+import { JwtPayload } from '@dicomcloud/types';
 import {
   Injectable,
   NotFoundException,
@@ -5,23 +8,24 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as argon2 from 'argon2';
 import { v4 as uuidv4 } from 'uuid';
-import { randomBytes, createHash } from 'crypto';
-import { EventEmitter2 } from '@nestjs/event-emitter';
 
+import { EncryptionUtil, SENSITIVE_CONFIG_FIELDS } from '../../common/utils/encryption.util';
+import { parsePagination, buildPaginatedResponse } from '../../common/utils/pagination.util';
 import { PrismaService } from '../../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
-import { StudyService } from '../study/study.service';
-import { EncryptionUtil, SENSITIVE_CONFIG_FIELDS } from '../../common/utils/encryption.util';
-import { JwtPayload } from '@dicomcloud/types';
-import { RegisterAgentDto } from './dto/register-agent.dto';
-import { HeartbeatDto } from './dto/heartbeat.dto';
-import { EnrollAgentDto } from './dto/enroll-agent.dto';
-import { CreateEnrollmentTokenDto } from './dto/create-enrollment-token.dto';
 import { IngestStudyDto } from '../study/dto/ingest-study.dto';
-import { parsePagination, buildPaginatedResponse } from '../../common/utils/pagination.util';
+import { StudyService } from '../study/study.service';
+
 import { AgentQueryDto } from './dto/agent-query.dto';
+import { CreateEnrollmentTokenDto } from './dto/create-enrollment-token.dto';
+import { EnrollAgentDto } from './dto/enroll-agent.dto';
+import { HeartbeatDto } from './dto/heartbeat.dto';
+import { RegisterAgentDto } from './dto/register-agent.dto';
+
+
 
 interface AgentRecordInput {
   version: string;

@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
-import { Queue } from 'bull';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Queue } from 'bull';
 import * as nodemailer from 'nodemailer';
+
 import { PrismaService } from '../../prisma/prisma.service';
 
 export interface SendEmailOptions {

@@ -1,9 +1,11 @@
+import { randomUUID } from 'crypto';
+
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createTestApp } from './utils/test-app';
+
 import { resetDatabase, prisma } from './utils/db';
-import { randomUUID } from 'crypto';
 import { createTenant, createClinic, createUser, createStorageDestination } from './utils/fixtures';
+import { createTestApp } from './utils/test-app';
 import { waitFor } from './utils/wait-for';
 
 describe('Bulk export (e2e)', () => {

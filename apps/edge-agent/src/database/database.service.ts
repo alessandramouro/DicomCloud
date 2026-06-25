@@ -1,7 +1,8 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { DatabaseSync } from 'node:sqlite';
 import * as path from 'path';
+
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs-extra';
 
 export interface RunResult {

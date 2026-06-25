@@ -1,10 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
+import { Cron } from '@nestjs/schedule';
 import * as si from 'systeminformation';
+
 import { CloudApiService } from '../cloud-api/cloud-api.service';
 import { SyncEngineService } from '../sync-engine/sync-engine.service';
-import { logger } from '../../common/logger';
 
 /**
  * Watchdog — monitors system health and sends heartbeats to cloud API.

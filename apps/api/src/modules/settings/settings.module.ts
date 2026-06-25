@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
-import { SettingsController } from './settings.controller';
+
 import { AuditModule } from '../audit/audit.module';
+
+import { SettingsController } from './settings.controller';
 
 @Module({
   imports: [AuditModule],

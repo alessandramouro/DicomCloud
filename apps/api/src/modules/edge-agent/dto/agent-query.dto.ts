@@ -1,6 +1,6 @@
-import { IsOptional, IsUUID, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { IsOptional, IsUUID, IsEnum } from 'class-validator';
 
 export class AgentQueryDto {
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) page?: number;

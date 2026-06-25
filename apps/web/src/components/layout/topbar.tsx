@@ -1,9 +1,10 @@
 'use client';
 
 import { Bell, Search, Moon, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
-import { usePathname } from 'next/navigation';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { useTheme } from 'next-themes';
+
 import { useAuthStore } from '@/stores/auth.store';
 
 const routeTitles: Record<string, string> = {

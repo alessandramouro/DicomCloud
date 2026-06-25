@@ -1,8 +1,8 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsString, IsOptional, IsBoolean, IsNumber, IsEmail, IsUrl,
+  IsString, IsOptional, IsBoolean, IsNumber, IsEmail,
   MinLength, MaxLength, Min, Max, IsUUID,
 } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateClinicDto {
   @ApiProperty() @IsString() @MinLength(2) @MaxLength(255) name: string;
