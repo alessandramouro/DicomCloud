@@ -5,13 +5,13 @@ name: smartpacs
 
 services:
   traefik:
-    image: traefik:v3.2
+    # Pinned minor versions of Traefik bundle an old Docker client that this
+    # host's Docker Engine (29.x) rejects (client requests API 1.24, daemon
+    # requires 1.40+). DOCKER_API_VERSION is not honored by Traefik's docker
+    # provider, so track latest instead of pinning to get an updated client.
+    image: traefik:latest
     container_name: smartpacs-traefik
     restart: always
-    environment:
-      # Traefik's bundled Docker client defaults to an old API version that
-      # this host's Docker Engine (29.x) rejects (min supported is 1.40).
-      DOCKER_API_VERSION: '1.40'
     command:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
