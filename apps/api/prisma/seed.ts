@@ -12,7 +12,7 @@ async function main() {
     where: { slug: 'platform' },
     update: {},
     create: {
-      id: '00000000-0000-0000-0000-000000000001',
+      id: '00000000-0000-0000-0000-000000000002',
       name: 'DicomCloud Platform',
       slug: 'platform',
       status: TenantStatus.ACTIVE,
