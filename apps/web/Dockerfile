@@ -49,7 +49,6 @@ WORKDIR /app
 
 COPY --from=builder /app/apps/web/.next/standalone ./
 COPY --from=builder /app/apps/web/.next/static ./.next/static
-COPY --from=builder /app/apps/web/public ./public
 
 RUN addgroup -g 1001 -S nodejs && adduser -S nextjs -u 1001
 USER nextjs
