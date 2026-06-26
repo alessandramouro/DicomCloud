@@ -153,6 +153,23 @@ services:
       traefik.http.routers.smartpacs-web.priority: '1'
       traefik.http.services.smartpacs-web.loadbalancer.server.port: '3000'
 
+  landing:
+    image: nginx:1.27-alpine
+    container_name: smartpacs-landing
+    restart: always
+    volumes:
+      - ./apps/landing:/usr/share/nginx/html:ro
+    networks:
+      - smartpacs-net
+    labels:
+      traefik.enable: 'true'
+      traefik.docker.network: smartpacs-net
+      traefik.http.routers.smartpacs-landing.rule: Host(`smartpacs.com.br`) || Host(`www.smartpacs.com.br`)
+      traefik.http.routers.smartpacs-landing.entrypoints: websecure
+      traefik.http.routers.smartpacs-landing.tls: 'true'
+      traefik.http.routers.smartpacs-landing.tls.certresolver: letsencrypt
+      traefik.http.services.smartpacs-landing.loadbalancer.server.port: '80'
+
 networks:
   smartpacs-net:
     name: smartpacs-net
