@@ -280,7 +280,7 @@ begin
 
       // Criar .env
       lines.Add('$envContent = @"');
-      lines.Add('# SmartPACS Edge Agent — gerado em ' + GetDateTimeString('yyyy-mm-dd hh:nn:ss', '-', ':'));
+      lines.Add('# SmartPACS Edge Agent - gerado em ' + GetDateTimeString('yyyy-mm-dd hh:nn:ss', '-', ':'));
       lines.Add('EDGE_AGENT_ID=$AgentId');
       lines.Add('EDGE_AGENT_CLINIC_ID=$ClinicId');
       lines.Add('EDGE_AGENT_API_KEY=$ApiKey');

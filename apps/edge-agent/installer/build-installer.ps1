@@ -1,4 +1,4 @@
-<#
+﻿<#
 .SYNOPSIS
     Build do instalador SmartPACS Edge Agent (.exe)
 
