@@ -14,6 +14,7 @@
 ;   bundle\nest-cli.json
 ;   bundle\tools\nssm\nssm.exe
 ;   bundle\tools\dcmtk\   (binarios DCMTK — storescp.exe etc.)
+;   bundle\tools\orthanc\ (Orthanc.exe + plugins\OrthancDicomWeb.dll — receptor alternativo, opt-in)
 ;   bundle\node\          (Node.js portatil — node.exe + npm)
 ;
 ; Esses arquivos sao gerados pelo script build-installer.ps1
@@ -79,6 +80,7 @@ portuguese.LblAeTitle=AE Title DICOM (max 16 caracteres):
 portuguese.LblDicomPort=Porta DICOM:
 portuguese.LblSvcName=Nome do servico Windows:
 portuguese.LblInstallSvc=Instalar como servico automatico (recomendado)
+portuguese.LblEnableOrthanc=Usar Orthanc local como receptor DICOM (experimental, recomendado para visualizacao OHIF)
 portuguese.ErrAgentIdRequired=O Agent ID e obrigatorio.
 portuguese.ErrApiKeyRequired=A API Key e obrigatoria.
 portuguese.ErrAeTitleLen=O AE Title deve ter no maximo 16 caracteres.
@@ -93,6 +95,8 @@ Name: "{app}\storage\failed"
 Name: "{app}\storage\logs"
 Name: "{app}\node"
 Name: "{app}\dcmtk"
+Name: "{app}\orthanc"
+Name: "{app}\orthanc\plugins"
 Name: "{app}\nssm"
 
 [Files]
@@ -107,6 +111,9 @@ Source: "bundle\node\*";          DestDir: "{app}\node";          Flags: ignorev
 
 ; DCMTK (receptor DICOM TCP)
 Source: "bundle\tools\dcmtk\*";   DestDir: "{app}\dcmtk";         Flags: ignoreversion recursesubdirs createallsubdirs
+
+; Orthanc (receptor DICOM alternativo, opt-in) + plugin DICOMweb
+Source: "bundle\tools\orthanc\*"; DestDir: "{app}\orthanc";       Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; NSSM (gerenciador de servico Windows)
 Source: "bundle\tools\nssm\nssm.exe"; DestDir: "{app}\nssm";      Flags: ignoreversion
@@ -137,11 +144,12 @@ Filename: "{sys}\WindowsPowerShell\v1.0\powershell.exe"; \
 [Code]
 
 var
-  PageCloud    : TInputQueryWizardPage;
-  PageCreds    : TInputQueryWizardPage;
-  PageDicom    : TInputQueryWizardPage;
-  PageSvc      : TInputQueryWizardPage;
-  ChkInstallSvc: TNewCheckBox;
+  PageCloud      : TInputQueryWizardPage;
+  PageCreds      : TInputQueryWizardPage;
+  PageDicom      : TInputQueryWizardPage;
+  PageSvc        : TInputQueryWizardPage;
+  ChkInstallSvc  : TNewCheckBox;
+  ChkEnableOrthanc: TNewCheckBox;
 
 // ---------------------------------------------------------------------------
 // Cria as paginas customizadas do assistente
@@ -176,6 +184,14 @@ begin
   PageDicom.Add(CustomMessage('LblDicomPort'), False);
   PageDicom.Values[0] := 'SMARTPACS';
   PageDicom.Values[1] := '104';
+
+  // Checkbox "usar Orthanc local como receptor"
+  ChkEnableOrthanc               := TNewCheckBox.Create(PageDicom);
+  ChkEnableOrthanc.Parent        := PageDicom.Surface;
+  ChkEnableOrthanc.Top           := PageDicom.EditorOf(1).Top + PageDicom.EditorOf(1).Height + 20;
+  ChkEnableOrthanc.Width         := PageDicom.SurfaceWidth;
+  ChkEnableOrthanc.Caption       := CustomMessage('LblEnableOrthanc');
+  ChkEnableOrthanc.Checked       := False;
 
   // ── Pagina 4: Servico Windows ────────────────────────────────────────────
   PageSvc := CreateInputQueryPage(PageDicom.ID,
@@ -259,6 +275,7 @@ begin
       lines.Add('$NodeExe      = "$InstallDir\node\node.exe"');
       lines.Add('$NssmExe      = "$InstallDir\nssm\nssm.exe"');
       lines.Add('$StoragePath  = "' + storagePath + '"');
+      lines.Add('$EnableOrthanc = $' + BoolToStr(ChkEnableOrthanc.Checked));
       lines.Add('');
 
       // Criar .env
@@ -272,6 +289,11 @@ begin
       lines.Add('DICOM_AE_TITLE=$AeTitle');
       lines.Add('DICOM_PORT=$DicomPort');
       lines.Add('DICOM_ALLOWED_AE_TITLES=');
+      lines.Add('DICOM_ORTHANC_ENABLED=$(if ($EnableOrthanc) { "true" } else { "false" })');
+      lines.Add('DICOM_ORTHANC_EXECUTABLE=Orthanc.exe');
+      lines.Add('DICOM_ORTHANC_HTTP_PORT=8043');
+      lines.Add('DICOM_ORTHANC_DATA_DIR=$StoragePath\orthanc');
+      lines.Add('DICOM_ORTHANC_PLUGINS_DIR=$InstallDir\orthanc\plugins');
       lines.Add('STORAGE_PATH=$StoragePath');
       lines.Add('DICOM_RECEIVED_DIR=$StoragePath\received');
       lines.Add('DICOM_PROCESSED_DIR=$StoragePath\processed');
@@ -290,6 +312,16 @@ begin
       lines.Add('    $sysPath = [Environment]::GetEnvironmentVariable("Path","Machine")');
       lines.Add('    if ($sysPath -notlike "*$dcmtkBin*") {');
       lines.Add('        [Environment]::SetEnvironmentVariable("Path","$sysPath;$dcmtkBin","Machine")');
+      lines.Add('    }');
+      lines.Add('}');
+      lines.Add('');
+
+      // Adicionar Orthanc ao PATH do sistema (se habilitado)
+      lines.Add('$orthancBin = "$InstallDir\orthanc"');
+      lines.Add('if ($EnableOrthanc -and (Test-Path $orthancBin)) {');
+      lines.Add('    $sysPath2 = [Environment]::GetEnvironmentVariable("Path","Machine")');
+      lines.Add('    if ($sysPath2 -notlike "*$orthancBin*") {');
+      lines.Add('        [Environment]::SetEnvironmentVariable("Path","$sysPath2;$orthancBin","Machine")');
       lines.Add('    }');
       lines.Add('}');
       lines.Add('');

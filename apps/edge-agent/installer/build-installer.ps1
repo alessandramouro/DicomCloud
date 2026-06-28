@@ -22,6 +22,9 @@
 .PARAMETER SkipNssmDownload
     Pula o download do NSSM (use se ja estiver em bundle\tools\nssm\)
 
+.PARAMETER SkipOrthancDownload
+    Pula o download do Orthanc (use se ja estiver em bundle\tools\orthanc\)
+
 .PARAMETER IsccPath
     Caminho para o compilador Inno Setup (iscc.exe).
     Padrao: detecta automaticamente nas pastas padrao de instalacao.
@@ -44,6 +47,7 @@ param(
     [switch] $SkipNodeDownload,
     [switch] $SkipDcmtkDownload,
     [switch] $SkipNssmDownload,
+    [switch] $SkipOrthancDownload,
     [string] $IsccPath = "",
     [string] $OutputDir = ""
 )
@@ -56,6 +60,8 @@ $APP_VERSION   = "1.0.0"
 $NODE_ZIP_URL  = "https://nodejs.org/dist/v22.13.1/node-v22.13.1-win-x64.zip"
 $NSSM_ZIP_URL  = "https://nssm.cc/release/nssm-2.24.zip"
 $DCMTK_ZIP_URL = "https://dicom.offis.de/download/dcmtk/dcmtk368/bin/dcmtk-3.6.8-win64-dynamic.zip"
+$ORTHANC_EXE_URL      = "https://orthanc.uclouvain.be/downloads/windows-64/orthanc/1.12.11/Orthanc.exe"
+$ORTHANC_DICOMWEB_URL = "https://orthanc.uclouvain.be/downloads/windows-64/orthanc-dicomweb/OrthancDicomWeb-1.23.dll"
 
 $ScriptDir   = Split-Path $MyInvocation.MyCommand.Path -Parent
 $AgentRoot   = Split-Path $ScriptDir -Parent
@@ -135,7 +141,7 @@ if (Test-Path $BundleDir) {
     Remove-Item "$BundleDir\dist"         -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item "$BundleDir\node_modules" -Recurse -Force -ErrorAction SilentlyContinue
 }
-foreach ($sub in @("dist","node_modules","node","tools\nssm","tools\dcmtk")) {
+foreach ($sub in @("dist","node_modules","node","tools\nssm","tools\dcmtk","tools\orthanc\plugins")) {
     New-Item -ItemType Directory -Force -Path (Join-Path $BundleDir $sub) | Out-Null
 }
 
@@ -222,6 +228,23 @@ if (-not (Test-Path "$binDir\storescp.exe")) {
         $binDir = $storescp.DirectoryName
         Write-Info "storescp.exe encontrado em $binDir"
     }
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 5b. Orthanc + plugin DICOMweb (receptor DICOM alternativo, opt-in)
+# ─────────────────────────────────────────────────────────────────────────────
+Write-Step "Preparando Orthanc"
+$orthancDir = Join-Path $ToolsDir "orthanc"
+$orthancExe = Join-Path $orthancDir "Orthanc.exe"
+$orthancPlugin = Join-Path $orthancDir "plugins\OrthancDicomWeb.dll"
+
+if ($SkipOrthancDownload -and (Test-Path $orthancExe) -and (Test-Path $orthancPlugin)) {
+    Write-OK "Orthanc ja presente (--SkipOrthancDownload)"
+}
+else {
+    Download-File $ORTHANC_EXE_URL $orthancExe "Orthanc.exe"
+    Download-File $ORTHANC_DICOMWEB_URL $orthancPlugin "Orthanc DICOMweb plugin"
+    Write-OK "Orthanc copiado para bundle\tools\orthanc\"
 }
 
 # ─────────────────────────────────────────────────────────────────────────────

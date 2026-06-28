@@ -107,6 +107,7 @@ O script faz automaticamente:
 | Edge Agent | 1.0.0 | Aplicação principal |
 | Node.js | 22 LTS | Runtime (portátil — não afeta Node do sistema) |
 | DCMTK (storescp) | 3.6.8 | Receptor DICOM TCP (C-STORE SCP) |
+| Orthanc + DICOMweb | 1.12.11 / 1.23 | Receptor DICOM alternativo (opt-in) + encaminhamento p/ visualização OHIF |
 | NSSM | 2.24 | Gerenciador de serviço Windows |
 
 ### Estrutura criada em `C:\SmartPACS\EdgeAgent\`
@@ -117,6 +118,7 @@ C:\SmartPACS\EdgeAgent\
   node_modules\    Dependências de produção
   node\            Node.js portátil
   dcmtk\           Binários DICOM (storescp.exe)
+  orthanc\         Orthanc.exe + plugins\OrthancDicomWeb.dll (opt-in, ver DICOM_ORTHANC_ENABLED no .env)
   nssm\            nssm.exe
   storage\
     received\      Arquivos DICOM recebidos (processando)

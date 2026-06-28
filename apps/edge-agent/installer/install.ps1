@@ -67,7 +67,8 @@ param(
     [switch]$Silent,
     [switch]$Uninstall,
     [switch]$NoService,
-    [switch]$NoFirewall
+    [switch]$NoFirewall,
+    [switch]$EnableOrthanc
 )
 
 $ErrorActionPreference = "Continue"
@@ -84,6 +85,9 @@ $NODE_MIN_VER       = "22.5.0"
 $NODE_ZIP_URL       = "https://nodejs.org/dist/v22.13.1/node-v22.13.1-win-x64.zip"
 $NSSM_ZIP_URL       = "https://nssm.cc/release/nssm-2.24.zip"
 $DCMTK_ZIP_URL      = "https://dicom.offis.de/download/dcmtk/dcmtk368/bin/dcmtk-3.6.8-win64-dynamic.zip"
+$ORTHANC_EXE_URL    = "https://orthanc.uclouvain.be/downloads/windows-64/orthanc/1.12.11/Orthanc.exe"
+$ORTHANC_DICOMWEB_URL = "https://orthanc.uclouvain.be/downloads/windows-64/orthanc-dicomweb/OrthancDicomWeb-1.23.dll"
+$DEFAULT_ORTHANC_HTTP_PORT = 8043
 
 $script:LogFile = $null
 
@@ -293,6 +297,43 @@ function Install-Dcmtk {
 }
 
 # ============================================================
+# Orthanc (receptor DICOM alternativo, opt-in via -EnableOrthanc)
+# ============================================================
+function Test-Orthanc {
+    try {
+        $out = & Orthanc --version 2>&1
+        if ("$out" -match "Orthanc") { return $true }
+    } catch { }
+    return $false
+}
+
+function Install-Orthanc {
+    param([string]$TargetDir)
+    $orthancDir  = Join-Path $TargetDir "orthanc"
+    $pluginsDir  = Join-Path $orthancDir "plugins"
+    Write-Info "Baixando Orthanc..."
+    try {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        New-Item -ItemType Directory -Force -Path $orthancDir | Out-Null
+        New-Item -ItemType Directory -Force -Path $pluginsDir | Out-Null
+
+        Invoke-WebRequest -Uri $ORTHANC_EXE_URL -OutFile (Join-Path $orthancDir "Orthanc.exe") -UseBasicParsing
+        Invoke-WebRequest -Uri $ORTHANC_DICOMWEB_URL -OutFile (Join-Path $pluginsDir "OrthancDicomWeb.dll") -UseBasicParsing
+
+        $sysPath = [Environment]::GetEnvironmentVariable("Path","Machine")
+        if ($sysPath -notlike "*$orthancDir*") {
+            [Environment]::SetEnvironmentVariable("Path","$sysPath;$orthancDir","Machine")
+        }
+        $env:Path = "$env:Path;$orthancDir"
+        Write-OK "Orthanc instalado em $orthancDir"
+        return $pluginsDir
+    } catch {
+        Write-Warn "Falha ao instalar Orthanc: $_ -- storescp continuara sendo usado como receptor."
+        return $null
+    }
+}
+
+# ============================================================
 # NSSM
 # ============================================================
 function Find-Nssm {
@@ -487,7 +528,10 @@ function New-EnvFile {
         [string]$CloudApiUrl,
         [string]$AeTitle,
         [int]   $DicomPort,
-        [string]$StoragePath
+        [string]$StoragePath,
+        [bool]  $EnableOrthanc = $false,
+        [string]$OrthancPluginsDir = "",
+        [int]   $OrthancHttpPort = 8043
     )
 
     $lines = @(
@@ -509,6 +553,13 @@ function New-EnvFile {
         "DICOM_AE_TITLE=$AeTitle",
         "DICOM_PORT=$DicomPort",
         "DICOM_ALLOWED_AE_TITLES=",
+        "",
+        "# Orthanc local (receptor DICOM alternativo + encaminhamento p/ nuvem)",
+        "DICOM_ORTHANC_ENABLED=$(if ($EnableOrthanc) { 'true' } else { 'false' })",
+        "DICOM_ORTHANC_EXECUTABLE=Orthanc.exe",
+        "DICOM_ORTHANC_HTTP_PORT=$OrthancHttpPort",
+        "DICOM_ORTHANC_DATA_DIR=$StoragePath\orthanc",
+        "DICOM_ORTHANC_PLUGINS_DIR=$OrthancPluginsDir",
         "",
         "# Armazenamento local",
         "STORAGE_PATH=$StoragePath",
@@ -754,6 +805,10 @@ if ($DicomPort -le 0) {
     }
 }
 
+if (-not $Silent -and -not $EnableOrthanc) {
+    $EnableOrthanc = Read-YesNo "Usar Orthanc local como receptor DICOM (experimental, recomendado p/ visualizacao OHIF)?" $false
+}
+
 if (-not $Silent) { Write-Host "`n  -- Servico Windows --" -ForegroundColor Cyan }
 $installService = (-not $NoService)
 if ($installService -and -not $Silent) {
@@ -820,6 +875,22 @@ if (Test-Dcmtk) {
     }
 }
 
+# --- Orthanc (opt-in) -------------------------------------------------
+$orthancPluginsDir = $null
+if ($EnableOrthanc) {
+    Write-Step "Verificando Orthanc"
+    if (Test-Orthanc) {
+        Write-OK "Orthanc encontrado"
+        $orthancPluginsDir = Join-Path $InstallDir "orthanc\plugins"
+    } else {
+        Write-Warn "Orthanc nao encontrado -- instalando..."
+        $orthancPluginsDir = Install-Orthanc -TargetDir $InstallDir
+        if (-not $orthancPluginsDir) {
+            $EnableOrthanc = $false
+        }
+    }
+}
+
 # --- NSSM ------------------------------------------------------------
 $nssmExe = $null
 if ($installService) {
@@ -856,14 +927,17 @@ if (-not $ok) {
 # --- .env ------------------------------------------------------------
 Write-Step "Criando configuracao (.env)"
 New-EnvFile `
-    -AgentDir    $InstallDir `
-    -AgentId     $AgentId `
-    -ApiKey      $ApiKey `
-    -ClinicId    $ClinicId `
-    -CloudApiUrl $CloudApiUrl `
-    -AeTitle     $AeTitle `
-    -DicomPort   $DicomPort `
-    -StoragePath $StoragePath
+    -AgentDir          $InstallDir `
+    -AgentId           $AgentId `
+    -ApiKey            $ApiKey `
+    -ClinicId          $ClinicId `
+    -CloudApiUrl       $CloudApiUrl `
+    -AeTitle           $AeTitle `
+    -DicomPort         $DicomPort `
+    -StoragePath       $StoragePath `
+    -EnableOrthanc     $EnableOrthanc `
+    -OrthancPluginsDir $orthancPluginsDir `
+    -OrthancHttpPort   $DEFAULT_ORTHANC_HTTP_PORT
 
 # --- Servico Windows -------------------------------------------------
 $serviceStarted = $false
