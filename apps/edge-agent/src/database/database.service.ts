@@ -142,6 +142,21 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         updated_at TEXT NOT NULL DEFAULT (datetime('now'))
       );
 
+      CREATE TABLE IF NOT EXISTS orthanc_forward_queue (
+        id TEXT PRIMARY KEY,
+        study_id TEXT NOT NULL REFERENCES studies(id) ON DELETE CASCADE,
+        study_instance_uid TEXT NOT NULL,
+        status TEXT NOT NULL DEFAULT 'PENDING',
+        attempts INTEGER NOT NULL DEFAULT 0,
+        max_attempts INTEGER NOT NULL DEFAULT 5,
+        last_error TEXT,
+        next_retry_at TEXT,
+        created_at TEXT NOT NULL DEFAULT (datetime('now')),
+        updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+      );
+
+      CREATE INDEX IF NOT EXISTS idx_orthanc_forward_status ON orthanc_forward_queue(status);
+
       CREATE TABLE IF NOT EXISTS agent_state (
         key TEXT PRIMARY KEY,
         value TEXT NOT NULL,

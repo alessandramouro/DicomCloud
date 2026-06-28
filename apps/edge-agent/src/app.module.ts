@@ -10,6 +10,7 @@ import syncConfig from './config/sync.config';
 import { DatabaseModule } from './database/database.module';
 import { CloudApiModule } from './modules/cloud-api/cloud-api.module';
 import { DicomListenerModule } from './modules/dicom-listener/dicom-listener.module';
+import { OrthancForwardModule } from './modules/orthanc-forward/orthanc-forward.module';
 import { QueueModule } from './modules/queue/queue.module';
 import { RealtimeModule } from './modules/realtime/realtime.module';
 import { AgentStateModule } from './modules/state/agent-state.module';
@@ -43,6 +44,7 @@ import { WorklistModule } from './modules/worklist/worklist.module';
     AgentStateModule,
     CloudApiModule,
     DicomListenerModule,
+    OrthancForwardModule,
     SyncEngineModule,
     WatchdogModule,
     QueueModule,

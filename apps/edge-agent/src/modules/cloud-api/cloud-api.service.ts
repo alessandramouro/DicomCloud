@@ -55,6 +55,27 @@ export class CloudApiService {
     }
   }
 
+  /** Forwards a STOW-RS multipart/related bundle into the central Orthanc archive, via the API relay. */
+  async forwardStudyToOrthanc(
+    studyInstanceUid: string,
+    body: Buffer,
+    contentType: string,
+  ): Promise<{ orthancStudyId: string } | null> {
+    if (!this.agentId) return null;
+
+    const res = await this.client.post(
+      `/agents/${this.agentId}/dicomweb/studies`,
+      body,
+      {
+        params: { studyInstanceUid },
+        headers: { 'Content-Type': contentType },
+        maxBodyLength: 512 * 1024 * 1024,
+        maxContentLength: 512 * 1024 * 1024,
+      },
+    );
+    return res.data?.data ?? null;
+  }
+
   async getRemoteConfig(): Promise<Record<string, unknown> | null> {
     if (!this.agentId) return null;
 

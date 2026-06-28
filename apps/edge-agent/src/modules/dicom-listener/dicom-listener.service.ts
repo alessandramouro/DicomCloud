@@ -3,6 +3,7 @@ import * as path from 'path';
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
+import type { DicomMetadata } from '@smartpacs/types';
 import * as fs from 'fs-extra';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -45,6 +46,10 @@ export class DicomListenerService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
+    if (this.configService.get<boolean>('dicom.orthanc.enabled', false)) {
+      this.logger.log('dicom.orthanc.enabled is set — OrthancSupervisorService handles DICOM reception instead');
+      return;
+    }
     await fs.ensureDir(this.storageDir);
     await this.startListener();
   }
@@ -155,74 +160,13 @@ export class DicomListenerService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
-      // Get or create study record
-      let study = this.database.get(
-        'SELECT * FROM studies WHERE study_instance_uid = ?',
-        studyUid,
-      ) as Record<string, unknown> | undefined;
-
-      const fileId = uuidv4();
       const studyDir = path.join(this.storageDir, `study_${studyUid.replace(/\./g, '_')}`);
       await fs.ensureDir(studyDir);
 
       const targetPath = path.join(studyDir, path.basename(filePath));
       await fs.move(filePath, targetPath, { overwrite: false });
 
-      const fileSize = (await fs.stat(targetPath)).size;
-
-      if (!study) {
-        const studyId = uuidv4();
-        this.database.run(
-          `INSERT INTO studies (id, study_instance_uid, patient_id, patient_name, study_date, modalities, storage_path, file_count, total_size, metadata)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
-          studyId,
-          studyUid,
-          metadata.patientId || null,
-          metadata.patientName || null,
-          metadata.studyDate || null,
-          JSON.stringify(metadata.modality ? [metadata.modality] : []),
-          studyDir,
-          fileSize,
-          JSON.stringify(metadata),
-        );
-
-        study = this.database.get('SELECT * FROM studies WHERE id = ?', studyId) as Record<string, unknown>;
-
-        // Report to cloud API
-        this.eventEmitter.emit('study.new', { studyId, metadata, studyDir });
-      } else {
-        this.database.run(
-          'UPDATE studies SET file_count = file_count + 1, total_size = total_size + ?, updated_at = datetime("now") WHERE id = ?',
-          fileSize,
-          study.id,
-        );
-      }
-
-      // Register DICOM file
-      this.database.run(
-        `INSERT OR IGNORE INTO dicom_files (id, study_id, series_uid, sop_uid, file_path, file_size)
-         VALUES (?, ?, ?, ?, ?, ?)`,
-        fileId,
-        study!.id,
-        metadata.seriesInstanceUid || 'unknown',
-        metadata.sopInstanceUid || uuidv4(),
-        targetPath,
-        fileSize,
-      );
-
-      // Queue for export
-      await this.queueService.enqueueFile({
-        studyId: study!.id as string,
-        filePath: targetPath,
-        fileSize,
-        metadata,
-      });
-
-      this.eventEmitter.emit('dicom.file_received', {
-        studyId: study!.id,
-        filePath: targetPath,
-        metadata,
-      });
+      await this.registerReceivedFile(targetPath, studyDir, metadata);
     } catch (err) {
       this.logger.error(`Failed to process DICOM file ${filePath}: ${(err as Error).message}`);
       // Move to failed directory
@@ -231,6 +175,82 @@ export class DicomListenerService implements OnModuleInit, OnModuleDestroy {
         fs.move(filePath, path.join(failedDir, path.basename(filePath)), { overwrite: true }),
       ).catch(() => null);
     }
+  }
+
+  /**
+   * Shared bookkeeping for a DICOM file that has already been written to its
+   * final location on disk: upserts the local studies/dicom_files rows,
+   * enqueues it for export, and emits the same events the storescp path
+   * always has. Reused by OrthancChangePollerService so the Orthanc-backed
+   * receiver and the storescp/file-watcher receiver feed an identical
+   * downstream pipeline.
+   */
+  async registerReceivedFile(
+    targetPath: string,
+    studyDir: string,
+    metadata: Partial<DicomMetadata> & { hash?: string },
+  ): Promise<{ studyId: string }> {
+    const studyUid = metadata.studyInstanceUid!;
+    const fileId = uuidv4();
+    const fileSize = (await fs.stat(targetPath)).size;
+
+    let study = this.database.get(
+      'SELECT * FROM studies WHERE study_instance_uid = ?',
+      studyUid,
+    ) as Record<string, unknown> | undefined;
+
+    if (!study) {
+      const studyId = uuidv4();
+      this.database.run(
+        `INSERT INTO studies (id, study_instance_uid, patient_id, patient_name, study_date, modalities, storage_path, file_count, total_size, metadata)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?, ?)`,
+        studyId,
+        studyUid,
+        metadata.patientId || null,
+        metadata.patientName || null,
+        metadata.studyDate || null,
+        JSON.stringify(metadata.modality ? [metadata.modality] : []),
+        studyDir,
+        fileSize,
+        JSON.stringify(metadata),
+      );
+
+      study = this.database.get('SELECT * FROM studies WHERE id = ?', studyId) as Record<string, unknown>;
+
+      this.eventEmitter.emit('study.new', { studyId, metadata, studyDir });
+    } else {
+      this.database.run(
+        'UPDATE studies SET file_count = file_count + 1, total_size = total_size + ?, updated_at = datetime("now") WHERE id = ?',
+        fileSize,
+        study.id,
+      );
+    }
+
+    this.database.run(
+      `INSERT OR IGNORE INTO dicom_files (id, study_id, series_uid, sop_uid, file_path, file_size)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      fileId,
+      study!.id,
+      metadata.seriesInstanceUid || 'unknown',
+      metadata.sopInstanceUid || uuidv4(),
+      targetPath,
+      fileSize,
+    );
+
+    await this.queueService.enqueueFile({
+      studyId: study!.id as string,
+      filePath: targetPath,
+      fileSize,
+      metadata,
+    });
+
+    this.eventEmitter.emit('dicom.file_received', {
+      studyId: study!.id,
+      filePath: targetPath,
+      metadata,
+    });
+
+    return { studyId: study!.id as string };
   }
 
   getStatus() {

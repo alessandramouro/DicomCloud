@@ -20,6 +20,13 @@ export class DicomFileWatcherService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   async onModuleInit() {
+    if (this.configService.get<boolean>('dicom.orthanc.enabled', false)) {
+      // OrthancChangePollerService writes files into this same directory and
+      // already calls listenerService.registerReceivedFile() itself --
+      // watching here too would double-process every file.
+      return;
+    }
+
     const storageDir = this.configService.get<string>('dicom.storageDirectory', './storage/received');
 
     this.watcher = chokidar.watch(`${storageDir}/**/*.dcm`, {
