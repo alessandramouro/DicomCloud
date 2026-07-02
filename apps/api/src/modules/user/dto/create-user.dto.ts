@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsEmail, IsString, IsEnum, IsOptional,
-  IsUUID, IsArray, MinLength, MaxLength,
+  IsEmail, IsString, IsEnum, IsOptional, IsArray, MinLength, MaxLength,
 } from 'class-validator';
 
 export class CreateUserDto {

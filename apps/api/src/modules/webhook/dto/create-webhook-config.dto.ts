@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsUrl, IsArray, ArrayMinSize, IsIn, IsOptional, IsUUID, IsInt, Min, Max } from 'class-validator';
+import { IsString, IsUrl, IsArray, ArrayMinSize, IsIn, IsOptional, IsInt, Min, Max } from 'class-validator';
 
 import { WEBHOOK_EVENTS, WebhookEvent } from '../webhook-events';
 

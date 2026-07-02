@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsUUID, IsBoolean, IsEnum, IsObject } from 'class-validator';
+import { IsString, IsOptional, IsBoolean, IsEnum, IsObject } from 'class-validator';
 
 export class UpsertStorageDestinationDto {
   @ApiPropertyOptional() @IsOptional() @IsString() id?: string;
