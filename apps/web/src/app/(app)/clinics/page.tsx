@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type { Clinic, PaginatedResponse } from '@smartpacs/types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  Building2, Search, Plus, RefreshCw, Server, ChevronLeft, ChevronRight, Loader2, Pencil, Upload, X,
+  Building2, Search, Plus, RefreshCw, Server, ChevronLeft, ChevronRight, Loader2, Pencil, Upload, X, Copy, Check,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -61,6 +61,22 @@ function Field({ label, error, children }: { label: string; error?: string; chil
       {children}
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
     </div>
+  );
+}
+
+function CopyButton({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+  return (
+    <button type="button" onClick={handleCopy} title="Copiar ID"
+      className="p-1.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors flex-shrink-0">
+      {copied ? <Check size={13} className="text-green-500" /> : <Copy size={13} />}
+    </button>
   );
 }
 
@@ -325,6 +341,13 @@ function EditClinicModal({ clinic, onClose }: { clinic: Clinic | null; onClose: 
             {mutation.isError && (
               <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-destructive text-sm">
                 {(mutation.error as any)?.response?.data?.message || 'Erro ao atualizar clínica'}
+              </div>
+            )}
+            {clinic?.id && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-muted/50 border border-border rounded-lg">
+                <span className="text-xs font-medium text-muted-foreground flex-shrink-0">ID da Clínica</span>
+                <span className="text-xs font-mono text-foreground flex-1 truncate">{clinic.id}</span>
+                <CopyButton text={clinic.id} />
               </div>
             )}
             <ClinicFormFields register={register} errors={errors} showStatus setValue={setValue} watch={watch} />
