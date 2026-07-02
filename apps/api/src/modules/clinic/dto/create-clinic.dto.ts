@@ -8,7 +8,7 @@ export class CreateClinicDto {
   @ApiProperty() @IsString() @MinLength(2) @MaxLength(255) name: string;
   @ApiPropertyOptional() @IsOptional() @IsString() logoUrl?: string;
   @ApiPropertyOptional({ description: 'Super Admin: create clinic in a specific tenant' })
-  @IsOptional() @IsUUID('all') _tenantId?: string;
+  @IsOptional() @IsString() _tenantId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() cnpj?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() cnes?: string;
 
